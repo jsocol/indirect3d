@@ -1,9 +1,4 @@
 (function main() {
-    function log(msg) {
-        if (typeof console != 'undefined')
-            console.log(msg);
-    }
-
     var WIDTH = 640,
         HEIGHT = 480;
     var container = document.getElementById('indirect-container');
@@ -24,7 +19,7 @@
         tmat = I3DXTranslateMatrix(0, 0, -10);
 
     var matView = I3DXMatrixLookAtLH(
-            I3DXVector3(0.0, 0.0, 10.0), // the camera position
+            I3DXVector3(0.0, 10.0, 10.0), // the camera position
             I3DXVector3(0, 0, 0), // the "look-at" position
             I3DXVector3(0, 1, 0)), // the "up" direction
         matProj = I3DXMatrixPerspectiveFovLH(
@@ -50,7 +45,6 @@
             i3d.DrawPrimitive(I3DPT_LINESTRIP, triangle);
             i3d.SetTransform(I3DTS_WORLD, id);
             i3d.DrawPrimitive(I3DPT_LINESTRIP, triangle);
-            //i3d.DrawPrimitive(I3DPT_LINESTRIP, zAxis);
             i3d.EndScene();
             i3d.Present();
             log("End frame.");
