@@ -30,7 +30,7 @@ function I3DXMatrix (m, n) {
     }
     this.m = m;
     this.n = n;
-    this.data = Float32Array(m*n);
+    this.data = new Float32Array(m*n);
     return this;
 }
 
@@ -334,12 +334,28 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
     }
 
     function AlphaBlend(bg, src) {
-        var sa = src >>> 24;
+        var sa = src >>> 24,
+            ba = bg >>> 24;
 
         // src is transparent.
-        if ( sa == 0)
+        if ( sa == 0 )
             return bg;
 
+        // bg is transparent.
+        if ( ba == 0 )
+            return src;
+
+        var a0, r0, g0, b0,
+            a1, r1, g1, b1;
+        [a0, r0, g0, b0] = unpack(bg);
+        [a1, r1, g1, b1] = unpack(src);
+        a0 = a0/255; a1 = a1/255;
+        var a = a0 + a1 - a0 * a1;
+        var r = Math.round((r0 * a0 + r1 * (1 - a0) * a1)/a),
+            g = Math.round((g0 * a0 + g1 * (1 - a0) * a1)/a),
+            b = Math.round((b0 * a0 + b1 * (1 - a0) * a1)/a);
+        a = Math.min(255, Math.round(a * 255));
+        return pack(a, r, g, b);
     }
 
 
@@ -358,8 +374,8 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
      */
     this.DrawPrimitive = function (mode, list) {
         var trans; // Will hold our final transform matrix.
-        trans = I3DXMatrixMultiply(transforms[I3DTS_PROJECTION], transforms[I3DTS_WORLD]);
-        trans = I3DXMatrixMultiply(transforms[I3DTS_VIEW], trans);
+        trans = I3DXMatrixMultiply(transforms[I3DTS_VIEW], transforms[I3DTS_PROJECTION]);
+        trans = I3DXMatrixMultiply(transforms[I3DTS_WORLD], trans);
 
         switch(mode) {
             case I3DPT_POINTLIST:
@@ -509,6 +525,96 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
                             ZBufferSet(sx, sy, c, z);
                         }
                     }
+                }
+                break;
+            case I3DPT_TRIANGLELIST:
+                var m = list.length;
+                for (var i=0; i<m-2; i++) {
+                    var p = I3DXMatrixMultiply(trans, list[i].coordinates),
+                        q = I3DXMatrixMultiply(trans, list[i+1].coordinates),
+                        r = I3DXMatrixMultiply(trans, list[i+2].coordinates),
+                        P, R, Q, N;
+                    P = I3DXVector3(p.data[0]/p.data[3],
+                                    p.data[1]/p.data[3],
+                                    p.data[2]/p.data[3]);
+                    Q = I3DXVector3(q.data[0]/q.data[3],
+                                    q.data[1]/q.data[3],
+                                    q.data[2]/q.data[3]);
+                    R = I3DXVector3(r.data[0]/r.data[3],
+                                    r.data[1]/r.data[3],
+                                    r.data[2]/r.data[3]);
+
+                    N = I3DXVectorCross(I3DXMatrixSubtract(Q, P),
+                                        I3DXMatrixSubtract(R, P));
+
+                    /**
+                     * A 3D, transformed, position. NOT a screen position.
+                     */
+                    function pos(dist, A, B) {
+                        var x = (B.data[0] - A.data[0]) * dist + A.data[0],
+                            y = (B.data[1] - A.data[1]) * dist + A.data[1],
+                            z = (B.data[2] - A.data[2]) * dist + A.data[2];
+                        return [x, y, z];
+                    }
+
+                    function color(dist, c0, c1) {
+                        var a0, r0, g0, b0,
+                            a1, r1, g1, b1;
+                        [a0, r0, g0, b0] = unpack(c0);
+                        [a1, r1, g1, b1] = unpack(c1);
+                        var a = Math.round((a1 - a0) * dist + a0),
+                            r = Math.round((r1 - r0) * dist + r0),
+                            g = Math.gound((g1 - g0) * dist + g0),
+                            b = Math.bound((b1 - b0) * dist + b0);
+                        return pack(a, r, g, b);
+                    }
+
+                    var Tp, Bp, Lp, Rp, dx, dy
+                        Psx = Math.round((1 - P.data[0]) * HWIDTH),
+                        Psy = Math.round((1 - P.data[1]) * HHEIGHT),
+                        Qsx = Math.round((1 - Q.data[0]) * HWIDTH),
+                        Qsy = Math.round((1 - Q.data[1]) * HHEIGHT),
+                        Rsx = Math.round((1 - R.data[0]) * HWIDTH),
+                        Rsy = Math.round((1 - R.data[1]) * HHEIGHT);
+                    Tp = Math.min(Psy, Qsy, Rsy);
+                    Bp = Math.max(Psy, Qsy, Rsy);
+                    Lp = Math.min(Psx, Qsx, Rsx);
+                    Rp = Math.max(Psx, Qsx, Rsx);
+                    dx = Bp - Tp;
+                    dy = Rp - Lp;
+
+                    function sq (i) {
+                        return i*i;
+                    }
+
+                    var Pa, Pr, Pg, Pb,
+                        Qa, Qr, Qg, Qb,
+                        Ra, Rr, Rg, Rb;
+                    [Pa, Pr, Pg, Pb] = unpack(list[i].color);
+                    [Qa, Qr, Qg, Qb] = unpack(list[i+1].color);
+                    [Ra, Rr, Rg, Rb] = unpack(list[i+2].color);
+
+                    for (var y=Tp; y<=Bp && y<=HEIGHT; y++) {
+                        for (var x=Lp; x<=Rp && x<=WIDTH; x++) {
+                            var pq = (y > ((Qsy-Psy)/(Qsx-Psx) * (x-Psx) + Psy)),
+                                pr = (y < ((Rsy-Psy)/(Rsx-Psx) * (x-Psx) + Psy)),
+                                qr = (y > ((Rsy-Qsy)/(Rsx-Qsx) * (x-Qsx) + Qsy));
+                            if (pq && pr && qr) {
+
+                                var dP = Math.sqrt(sq(x - Psx) + sq(y - Psy)),
+                                    dQ = Math.sqrt(sq(x - Qsx) + sq(y - Qsy)),
+                                    dR = Math.sqrt(sq(x - Rsx) + sq(y - Rsy)),
+                                    dSum;
+                                dSum = dP + dQ + dR;
+                                var a = Math.round(Pa * dP + Qa * dQ + Ra * dR)/dSum,
+                                    r = Math.round(Pr * dP + Qr * dQ + Rr * dR)/dSum,
+                                    g = Math.round(Pg * dP + Qg * dQ + Rg * dR)/dSum,
+                                    b = Math.round(Pb * dP + Qb * dQ + Rb * dR)/dSum;
+                                ZBufferSet(x, y, pack(a, r, g, b), 0);
+                            }
+                        }
+                    }
+
                 }
                 break;
         }

@@ -6,16 +6,56 @@
   <style>
   body {
     background-color: #fff;
+    font-family: Georgia, "Times New Roman", Times, serif;
+  }
+  canvas,
+  h1, h2,
+  p, ul {
+    margin: 20px auto;
+    width: 640px;
+  }
+  li > ul {
+    margin: 0;
   }
   canvas {
     background-color: #000;
     display: block;
-    margin: 20px auto;
   }
   </style>
 </head>
 <body>
   <div id="indirect-container"></div>
+  <h1>Indirect3D</h1>
+  <p><strong>This may well crash your browser!</strong> You probably
+    don't want to try to run the animation in an instance where you're
+    doing anything important.</p>
+  <p>The animation is two triangles, defined as a set of vertexes, each
+    with a position and a primary color with 50% alpha. One triangle is
+    fixed in space while the other one moves around it.</p>
+  <p>Only runs in <strong>Firefox 4</strong> for some reason. Chromium
+    doesn't give any errors but doesn't work, either.</p>
+  <p>To start, hit <strong>Enter</strong>. To stop, hit
+    <strong>Esc</strong>.</p>
+  <h2>Known issues</h2>
+  <ul>
+    <li>Coloring algorithm for triangles is just plain wrong.</li>
+    <li>Something is not transforming correctly, at all.<ul>
+      <li>The moving triangle should rotate in place.</li>
+      <li>Also the bottom right corner should really be the top.</li>
+      <li>When I order the transforms the way I think I should, things
+      get very weird.</li>
+      <li>Moving the camera doesn't quite do what you thing it will.</li>
+    </ul></li>
+    <li>No triangle culling yet, which leads to...</li>
+    <li>...aberrant behavior with triangles of certain orientations.</li>
+    <li>It's slow as hell, but I don't think that will change.</li>
+  </ul>
+  <h2>Things that work pretty well</h2>
+  <ul>
+    <li>The alpha-blending algorithm seems basically accurate.</li>
+    <li>Coloring algorithm for lines is spot on, at least for
+      low-distortion projections.</li>
+  </ul>
   <script src="indirect3d.js"></script>
   <script src="main.js"></script>
 </body>
