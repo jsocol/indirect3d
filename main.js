@@ -19,7 +19,7 @@
         tmat = I3DXTranslateMatrix(0, 0, -10);
 
     var matView = I3DXMatrixLookAtLH(
-            I3DXVector3(0.0, 0.0, 10.0), // the camera position
+            I3DXVector3(0.0, 0.0, 30.0), // the camera position
             I3DXVector3(0, 0, 0), // the "look-at" position
             I3DXVector3(0, 1, 0)), // the "up" direction
         matProj = I3DXMatrixPerspectiveFovLH(
