@@ -130,7 +130,7 @@ function I3DXRotateZMatrix(theta) {
 }
 
 function I3DXMatrixTranspose(A) {
-    var B = I3DXMatrix(A.n, A.m);
+    var B = new I3DXMatrix(A.n, A.m);
     for (var i=0; i<A.m; i++) {
         for (var j=0; j<A.n; j++) {
             B.set(j, i, A.get(i, j));
@@ -146,13 +146,47 @@ function I3DXMatrixMultiply(A, B) {
         throw "Matrices must be multiplicable! " + Adim + ':' + Bdim;
     }
     var M = new I3DXMatrix(A.m, B.n);
-    for (var i=0; i<A.m; i++) {
-        for (var j=0; j<B.n; j++) {
-            var t = 0;
-            for (var k=0; k<A.n; k++) {
-                t += A.get(i,k) * B.get(k,j);
+    // Shortcut for 3x3 matrices.
+    if (3 == A.m && 3 == A.n && 3 == B.m && 3 == B.n) {
+        M.data[0] = A.data[0] * B.data[0] + A.data[1] * B.data[3] + A.data[2] * B.data[6];
+        M.data[1] = A.data[0] * B.data[1] + A.data[1] * B.data[4] + A.data[2] * B.data[7];
+        M.data[2] = A.data[0] * B.data[2] + A.data[1] * B.data[5] + A.data[2] * B.data[8];
+        M.data[3] = A.data[3] * B.data[0] + A.data[4] * B.data[3] + A.data[5] * B.data[6];
+        M.data[4] = A.data[3] * B.data[1] + A.data[4] * B.data[4] + A.data[5] * B.data[7];
+        M.data[5] = A.data[3] * B.data[2] + A.data[4] * B.data[5] + A.data[5] * B.data[8];
+        M.data[6] = A.data[6] * B.data[0] + A.data[7] * B.data[3] + A.data[8] * B.data[6];
+        M.data[7] = A.data[6] * B.data[1] + A.data[7] * B.data[4] + A.data[8] * B.data[7];
+        M.data[8] = A.data[6] * B.data[2] + A.data[7] * B.data[5] + A.data[8] * B.data[8];
+    }
+    // Shortcut for 4x4
+    else if (4 == A.m && 4 == A.n && 4 == B.m && 4 == B.n) {
+        M.data[0] = A.data[0] * B.data[0] + A.data[1] * B.data[4] + A.data[2] * B.data[8] + A.data[3] * B.data[12];
+        M.data[1] = A.data[0] * B.data[1] + A.data[1] * B.data[5] + A.data[2] * B.data[9] + A.data[3] * B.data[13];
+        M.data[2] = A.data[0] * B.data[2] + A.data[1] * B.data[6] + A.data[2] * B.data[10] + A.data[3] * B.data[14];
+        M.data[3] = A.data[0] * B.data[3] + A.data[1] * B.data[7] + A.data[2] * B.data[11] + A.data[3] * B.data[15];
+        M.data[4] = A.data[4] * B.data[0] + A.data[5] * B.data[4] + A.data[6] * B.data[8] + A.data[7] * B.data[12];
+        M.data[5] = A.data[4] * B.data[1] + A.data[5] * B.data[5] + A.data[6] * B.data[9] + A.data[7] * B.data[13];
+        M.data[6] = A.data[4] * B.data[2] + A.data[5] * B.data[6] + A.data[6] * B.data[10] + A.data[7] * B.data[14];
+        M.data[7] = A.data[4] * B.data[3] + A.data[5] * B.data[7] + A.data[6] * B.data[11] + A.data[7] * B.data[15];
+        M.data[8] = A.data[8] * B.data[0] + A.data[9] * B.data[4] + A.data[10] * B.data[8] + A.data[11] * B.data[12];
+        M.data[9] = A.data[8] * B.data[1] + A.data[9] * B.data[5] + A.data[10] * B.data[9] + A.data[11] * B.data[13];
+        M.data[10] = A.data[8] * B.data[2] + A.data[9] * B.data[6] + A.data[10] * B.data[10] + A.data[11] * B.data[14];
+        M.data[11] = A.data[8] * B.data[3] + A.data[9] * B.data[7] + A.data[10] * B.data[11] + A.data[11] * B.data[15];
+        M.data[12] = A.data[12] * B.data[0] + A.data[13] * B.data[4] + A.data[14] * B.data[8] + A.data[15] * B.data[12];
+        M.data[13] = A.data[12] * B.data[1] + A.data[13] * B.data[5] + A.data[14] * B.data[9] + A.data[15] * B.data[13];
+        M.data[14] = A.data[12] * B.data[2] + A.data[13] * B.data[6] + A.data[14] * B.data[10] + A.data[15] * B.data[14];
+        M.data[15] = A.data[12] * B.data[3] + A.data[13] * B.data[7] + A.data[14] * B.data[11] + A.data[15] * B.data[15];
+    }
+    // Multiply anything.
+    else {
+        for (var i=0; i<A.m; i++) {
+            for (var j=0; j<B.n; j++) {
+                var t = 0;
+                for (var k=0; k<A.n; k++) {
+                    t += A.get(i,k) * B.get(k,j);
+                }
+                M.set(i, j, t);
             }
-            M.set(i, j, t);
         }
     }
     return M;
