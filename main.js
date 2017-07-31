@@ -35,40 +35,41 @@
     i3d.SetTransform(I3DTS_PROJECTION, matProj);
     i3d.SetTransform(I3DTS_WORLD, id);
 
-    var intv;
+    var isPlaying = false;
     function play() {
-        return setInterval(function() {
-            log("Start frame.");
-            i3d.BeginScene();
-            var rot = I3DXRotateYMatrix(idx);
-            i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(rot, id));
-            i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triangle);
-            i3d.SetTransform(I3DTS_WORLD, id);
-            i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triangle);
-            i3d.EndScene();
-            i3d.Present();
-            log("End frame.");
-            idx += 0.05;
-        }, 60);
+        log("Start frame.");
+        i3d.BeginScene();
+        var rot = I3DXRotateYMatrix(idx);
+        i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(rot, id));
+        i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triangle);
+        i3d.SetTransform(I3DTS_WORLD, id);
+        i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triangle);
+        i3d.EndScene();
+        i3d.Present();
+        log("End frame.");
+        idx += 0.05;
+        if (isPlaying) {
+            requestAnimationFrame(play);
+        }
     }
-    //intv = play();
 
     window.addEventListener('keyup', function(e) {
-        if(e.keyCode == 27) {
-            clearInterval(intv);
+        if(e.keyCode == 27) { // Escape
+            isPlaying = false;
             log("Stop animation.");
         }
         else if (e.keyCode == 13) {
+            isPlaying = true;
             log("Start animation.");
-            intv = play();
+            requestAnimationFrame(play);
         }
         e.preventDefault();
         return false;
     }, true);
-    log(new Date());
+    log("Construct scene", new Date());
     i3d.BeginScene();
     i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triangle);
     i3d.EndScene();
     i3d.Present();
-    log(new Date());
+    log("End Construct scene", new Date());
 })();
