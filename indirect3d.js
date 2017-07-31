@@ -363,8 +363,8 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
     }
 
     function ZBufferClear() {
-        zbufferData = Int32Array(bufferLength),
-        zbufferDepth = Float32Array(bufferLength);
+        zbufferData = new Int32Array(bufferLength),
+        zbufferDepth = new Float32Array(bufferLength);
     }
 
     function AlphaBlend(bg, src) {
