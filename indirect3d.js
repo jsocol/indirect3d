@@ -1,9 +1,3 @@
-function log(msg) {
-    if(typeof console != 'undefined') {
-        console.log(msg);
-    }
-}
-
 function pack(a, b, c, d) {
     return (a << 24) | (b << 16) | (c << 8) | d;
 }
@@ -143,7 +137,7 @@ function I3DXMatrixMultiply(A, B) {
     if (A.n != B.m) {
         var Adim = '('+A.m+','+A.n+')',
             Bdim = '('+B.m+','+B.n+')';
-        throw "Matrices must be multiplicable! " + Adim + ':' + Bdim;
+        throw new Error("Matrices must be multiplicable! " + Adim + ':' + Bdim);
     }
     var M = new I3DXMatrix(A.m, B.n);
     // Shortcut for 3x3 matrices.
@@ -194,7 +188,7 @@ function I3DXMatrixMultiply(A, B) {
 
 function I3DXMatrixAdd (A, B) {
     if ((A.m != B.m) || (A.n != B.n)) {
-        throw "Matrices must be the same size!";
+        throw new Error("Matrices must be the same size!");
     }
     var M = new I3DXMatrix(A.m, A.n),
         l = A.m * A.n;
@@ -206,7 +200,7 @@ function I3DXMatrixAdd (A, B) {
 
 function I3DXMatrixSubtract (A, B) {
     if (A.m != B.m || A.n != B.n)
-        throw "Matrices must be the same size!";
+        throw new Error("Matrices must be the same size!");
     var M = new I3DXMatrix(A.m, A.n),
         l = A.m * A.n;
     for (var i=0; i<l; i++) {
@@ -225,7 +219,7 @@ function I3DXVectorCross (a, b) {
 
 function I3DXVectorDot (a, b) {
     if (a.m != b.m || a.n != b.n)
-        throw "Vectors must be the same size!";
+        throw new Error("Vectors must be the same size!");
     var total = 0,
         l = a.m * a.n;
     for (var i=0; i<l; i++) {

@@ -3,10 +3,16 @@
         HEIGHT = 480;
     var container = document.getElementById('indirect-container');
 
-    var triangle = [
+    var fixedTriangle = [
             new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff)),
             new I3DXVertex(0.0, 3.0, 0.0, ARGB(0x80,0,0xff,0)),
             new I3DXVertex(-2.5, -3.0, 0.0, ARGB(0x80,0xff,0,0)),
+            //new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff))
+        ],
+        movingTriangle = [
+            new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x40,0,0,0xff)),
+            new I3DXVertex(0.0, 3.0, 0.0, ARGB(0x40,0,0,0xff)),
+            new I3DXVertex(-2.5, -3.0, 0.0, ARGB(0x40,0,0,0xff)),
             //new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff))
         ],
         zAxis = [
@@ -37,16 +43,18 @@
 
     var isPlaying = false;
     function play() {
-        log("Start frame.");
+        var start = new Date();
+        console.log("Start frame.");
         i3d.BeginScene();
         var rot = I3DXRotateYMatrix(idx);
         i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(rot, id));
-        i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triangle);
+        i3d.DrawPrimitive(I3DPT_TRIANGLELIST, movingTriangle);
         i3d.SetTransform(I3DTS_WORLD, id);
-        i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triangle);
+        i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
         i3d.EndScene();
         i3d.Present();
-        log("End frame.");
+        var dt = new Date() - start;
+        console.log("End frame:", dt);
         idx += 0.05;
         if (isPlaying) {
             requestAnimationFrame(play);
@@ -56,20 +64,20 @@
     window.addEventListener('keyup', function(e) {
         if(e.keyCode == 27) { // Escape
             isPlaying = false;
-            log("Stop animation.");
+            console.log("Stop animation.");
         }
         else if (e.keyCode == 13) {
             isPlaying = true;
-            log("Start animation.");
+            console.log("Start animation.");
             requestAnimationFrame(play);
         }
         e.preventDefault();
         return false;
     }, true);
-    log("Construct scene", new Date());
+    console.log("Construct scene", new Date());
     i3d.BeginScene();
-    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triangle);
+    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
     i3d.EndScene();
     i3d.Present();
-    log("End Construct scene", new Date());
+    console.log("End Construct scene", new Date());
 })();
