@@ -40,24 +40,25 @@
     <strong>Esc</strong>.</p>
   <h2>Known issues</h2>
   <ul>
-    <li>Coloring algorithm for triangles is just plain wrong.</li>
-    <li>Something is not transforming correctly, at all.<ul>
-      <li>The moving triangle should rotate in place.</li>
-      <li>Also the bottom right corner should really be the top.</li>
-      <li>When I order the transforms the way I think I should, things
-      get very weird.</li>
-      <li>Moving the camera doesn't quite do what you thing it will.</li>
-    </ul></li>
+    <li>Something is not transforming correctly, at all.
+      <ul>
+        <li>The moving triangle should rotate in place.</li>
+        <li>When I order the transforms the way I think I should, things get very weird.</li>
+        <li>Moving the camera doesn't quite do what you thing it will.</li>
+      </ul>
+    </li>
     <li>No triangle culling yet, which leads to...</li>
     <li>...aberrant behavior with triangles of certain orientations.</li>
-    <li>It's slow as hell, but I don't think that will change.</li>
+    <li><s>It's slow as hell, but I don't think that will change.</s><br>
+        So it turns out browsers got a <em>lot</em> faster.
+    </li>
     <li>The aliasing, oh god the aliasing!</li>
   </ul>
   <h2>Things that work pretty well</h2>
   <ul>
     <li>The alpha-blending algorithm seems basically accurate.</li>
-    <li>Coloring algorithm for lines is spot on, at least for
-      low-distortion projections.</li>
+    <li>Barycentric coordinates work great for triangle coloring.</li>
+    <li>Coloring algorithm for lines is spot on, at least for low-distortion projections.</li>
   </ul>
   <script src="indirect3d.js"></script>
   <script src="main.js"></script>
