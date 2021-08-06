@@ -294,6 +294,20 @@ function I3DXMatrixPerspectiveFovLH (fovy, aspect, zn, zf) {
     return matrix;
 }
 
+function I3DXBarycentricCoords(x, y, x1, y1, x2, y2, x3, y3) {
+    const y2y3 = y2 - y3;
+    const x3x2 = x3 - x2;
+    const x1x3 = x1 - x3;
+    const y1y3 = y1 - y3;
+    const y3y1 = y3 - y1;
+    const xx3 = x - x3;
+    const yy3 = y - y3;
+    const d = y2y3 * x1x3 + x3x2 * y1y3;
+    const w1 = (y2y3 * xx3 + x3x2 * yy3) / d;
+    const w2 = (y3y1 * xx3 + x1x3 * yy3) / d;
+    return [w1, w2, 1 - w1 - w2];
+}
+
 function I3DXDevice(container, WIDTH, HEIGHT) {
     // Set up the canvas we'll use to draw.
     var canvas = document.createElement('canvas'),
@@ -525,28 +539,6 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
                     N = I3DXVectorCross(I3DXMatrixSubtract(Q, P),
                                         I3DXMatrixSubtract(R, P));
 
-                    /**
-                     * A 3D, transformed, position. NOT a screen position.
-                     */
-                    function pos(dist, A, B) {
-                        var x = (B.data[0] - A.data[0]) * dist + A.data[0],
-                            y = (B.data[1] - A.data[1]) * dist + A.data[1],
-                            z = (B.data[2] - A.data[2]) * dist + A.data[2];
-                        return [x, y, z];
-                    }
-
-                    function color(dist, c0, c1) {
-                        var a0, r0, g0, b0,
-                            a1, r1, g1, b1;
-                        [a0, r0, g0, b0] = unpack(c0);
-                        [a1, r1, g1, b1] = unpack(c1);
-                        var a = Math.round((a1 - a0) * dist + a0),
-                            r = Math.round((r1 - r0) * dist + r0),
-                            g = Math.gound((g1 - g0) * dist + g0),
-                            b = Math.bound((b1 - b0) * dist + b0);
-                        return pack(a, r, g, b);
-                    }
-
                     var Tp, Bp, Lp, Rp, dx, dy
                         Psx = Math.round((1 - P.data[0]) * HWIDTH),
                         Psy = Math.round((1 - P.data[1]) * HHEIGHT),
@@ -561,38 +553,30 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
                     dx = Bp - Tp;
                     dy = Rp - Lp;
 
-                    function sq (i) {
-                        return i*i;
-                    }
-
-                    var Pa, Pr, Pg, Pb,
-                        Qa, Qr, Qg, Qb,
-                        Ra, Rr, Rg, Rb;
-                    [Pa, Pr, Pg, Pb] = unpack(list[i].color);
-                    [Qa, Qr, Qg, Qb] = unpack(list[i+1].color);
-                    [Ra, Rr, Rg, Rb] = unpack(list[i+2].color);
+                    const [Pa, Pr, Pg, Pb] = unpack(list[i].color);
+                    const [Qa, Qr, Qg, Qb] = unpack(list[i+1].color);
+                    const [Ra, Rr, Rg, Rb] = unpack(list[i+2].color);
 
                     for (var y=Tp; y<=Bp && y<=HEIGHT; y++) {
                         for (var x=Lp; x<=Rp && x<=WIDTH; x++) {
-                            var pq = (y > ((Qsy-Psy)/(Qsx-Psx) * (x-Psx) + Psy)),
-                                pr = (y < ((Rsy-Psy)/(Rsx-Psx) * (x-Psx) + Psy)),
-                                qr = (y > ((Rsy-Qsy)/(Rsx-Qsx) * (x-Qsx) + Qsy));
+                            var pq = (y >= ((Qsy-Psy)/(Qsx-Psx) * (x-Psx) + Psy)),
+                                pr = (y <= ((Rsy-Psy)/(Rsx-Psx) * (x-Psx) + Psy)),
+                                qr = (y >= ((Rsy-Qsy)/(Rsx-Qsx) * (x-Qsx) + Qsy));
                             if (pq && pr && qr) {
+                                // Barycentric coordinates
+                                const [Wp, Wq, Wr] = I3DXBarycentricCoords(x, y, Psx, Psy, Qsx, Qsy, Rsx, Rsy);
+                                const z = P.data[2] * Wp + Q.data[2] * Wq + R.data[2] * Wr;
 
-                                var dP = Math.sqrt(sq(x - Psx) + sq(y - Psy)),
-                                    dQ = Math.sqrt(sq(x - Qsx) + sq(y - Qsy)),
-                                    dR = Math.sqrt(sq(x - Rsx) + sq(y - Rsy)),
-                                    dSum;
-                                dSum = dP + dQ + dR;
-                                var a = Math.round(Pa * dP + Qa * dQ + Ra * dR)/dSum,
-                                    r = Math.round(Pr * dP + Qr * dQ + Rr * dR)/dSum,
-                                    g = Math.round(Pg * dP + Qg * dQ + Rg * dR)/dSum,
-                                    b = Math.round(Pb * dP + Qb * dQ + Rb * dR)/dSum;
-                                ZBufferSet(x, y, pack(a, r, g, b), 0);
+                                const c = pack(
+                                    Pa * Wp + Qa * Wq + Ra * Wr,
+                                    Pr * Wp + Qr * Wq + Rr * Wr,
+                                    Pg * Wp + Qg * Wq + Rg * Wr,
+                                    Pb * Wp + Qb * Wq + Rb * Wr,
+                                );
+                                ZBufferSet(x, y, c, z);
                             }
                         }
                     }
-
                 }
                 break;
         }

@@ -7,13 +7,13 @@
             new I3DXVertex(2.5, -3.0, 0.0, ARGB(0xff,0,0,0xff)),
             new I3DXVertex(0.0, 3.0, 0.0, ARGB(0xff,0,0xff,0)),
             new I3DXVertex(-2.5, -3.0, 0.0, ARGB(0xff,0xff,0,0)),
-            new I3DXVertex(2.5, -3.0, 0.0, ARGB(0xff,0,0,0xff)),
+            //new I3DXVertex(2.5, -3.0, 0.0, ARGB(0xff,0,0,0xff)),
             //new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff))
         ];
     var movingTriangle = [
-            new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x40,0,0,0xff)),
-            new I3DXVertex(0.0, 3.0, 0.0, ARGB(0x40,0,0,0xff)),
-            new I3DXVertex(-2.5, -3.0, 0.0, ARGB(0x40,0,0,0xff)),
+            new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff)),
+            new I3DXVertex(0.0, 3.0, 0.0, ARGB(0x80,0,0,0xff)),
+            new I3DXVertex(-2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff)),
             //new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff))
         ];
         // zAxis = [
@@ -55,9 +55,9 @@
         var left = I3DXTranslateMatrix(0, 0, 150);
 
         i3d.SetTransform(I3DTS_WORLD, I3DXMatrixAdd(I3DXMatrixMultiply(rot, id), left));
-        i3d.DrawPrimitive(I3DPT_POINTLIST, movingTriangle);
+        i3d.DrawPrimitive(I3DPT_TRIANGLELIST, movingTriangle);
         i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(rev, id));
-        i3d.DrawPrimitive(I3DPT_LINESTRIP, fixedTriangle);
+        i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
         i3d.EndScene();
         i3d.Present();
 
@@ -84,7 +84,7 @@
     }, true);
     console.log("Construct scene", new Date());
     i3d.BeginScene();
-    i3d.DrawPrimitive(I3DPT_LINELIST, fixedTriangle);
+    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
     i3d.EndScene();
     i3d.Present();
     console.log("End Construct scene", new Date());
