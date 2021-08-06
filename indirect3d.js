@@ -44,6 +44,17 @@ I3DXMatrix.prototype.incr = function(i, j, v) {
     return this.data[this.idx(i,j)] += v;
 }
 
+I3DXMatrix.prototype.debug = function() {
+    const rows = [];
+    for (var i = 0; i < this.n; i++) {
+        rows.push([]);
+        for (var j = 0; j < this.m; j++) {
+            rows[i].push(this.get(i, j));
+        }
+    }
+    console.table(rows);
+}
+
 function I3DXVector (m) {
     return new I3DXMatrix(m, 1);
 }
@@ -246,27 +257,27 @@ function I3DXVectorUnit (a) {
 }
 
 function I3DXMatrixLookAtLH(pEye, pAt, pUp) {
-    var vec = I3DXVector(3),
-        right = I3DXVector(3),
-        up = I3DXVector(3),
+    var zaxis = I3DXVector(3),
+        xaxis = I3DXVector(3),
+        yaxis = I3DXVector(3),
         matrix = I3DXMatrixIdentity(4);
 
-    vec = I3DXVectorUnit(I3DXMatrixSubtract(pAt, pEye));
-    right = I3DXVectorUnit(I3DXVectorCross(pUp, vec));
-    up = I3DXVectorCross(vec, right);
+    zaxis = I3DXVectorUnit(I3DXMatrixSubtract(pAt, pEye));
+    xaxis = I3DXVectorUnit(I3DXVectorCross(pUp, zaxis));
+    yaxis = I3DXVectorCross(zaxis, xaxis);
 
-    matrix.set(0, 0, right.data[0]);
-    matrix.set(1, 0, right.data[1]);
-    matrix.set(2, 0, right.data[2]);
-    matrix.set(3, 0, -I3DXVectorDot(right, pEye));
-    matrix.set(0, 1, up.data[0]);
-    matrix.set(1, 1, up.data[1]);
-    matrix.set(2, 1, up.data[2]);
-    matrix.set(3, 1, -I3DXVectorDot(up, pEye));
-    matrix.set(0, 2, vec.data[0]);
-    matrix.set(1, 2, vec.data[1]);
-    matrix.set(2, 2, vec.data[2]);
-    matrix.set(3, 2, -I3DXVectorDot(vec, pEye));
+    matrix.set(0, 0, xaxis.data[0]);
+    matrix.set(1, 0, xaxis.data[1]);
+    matrix.set(2, 0, xaxis.data[2]);
+    matrix.set(3, 0, -I3DXVectorDot(xaxis, pEye));
+    matrix.set(0, 1, yaxis.data[0]);
+    matrix.set(1, 1, yaxis.data[1]);
+    matrix.set(2, 1, yaxis.data[2]);
+    matrix.set(3, 1, -I3DXVectorDot(yaxis, pEye));
+    matrix.set(0, 2, zaxis.data[0]);
+    matrix.set(1, 2, zaxis.data[1]);
+    matrix.set(2, 2, zaxis.data[2]);
+    matrix.set(3, 2, -I3DXVectorDot(zaxis, pEye));
     return matrix;
 }
 
@@ -425,6 +436,7 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
                 }
                 break;
             case I3DPT_LINELIST:
+            case I3DPT_LINESTRIP:
                 var m = list.length;
                 for (var i=0; i<m-1; i++) {
                     var f0 = I3DXMatrixMultiply(trans, list[i].coordinates),
@@ -445,8 +457,8 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
                     var a0, r0, b0, g0,
                         a1, r1, b1, g1,
                         da, dr, dg, db;
-                    [a0, r0, b0, g0] = unpack(list[i].color);
-                    [a1, r1, b1, g1] = unpack(list[i+1].color);
+                    [a0, r0, g0, b0] = unpack(list[i].color);
+                    [a1, r1, g1, b1] = unpack(list[i+1].color);
                     da = a1 - a0;
                     dr = r1 - r0;
                     dg = g1 - g0;
@@ -487,71 +499,9 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
                             ZBufferSet(sx, sy, c, z);
                         }
                     }
-                    i++;
-                }
-                break;
-            case I3DPT_LINESTRIP:
-                var m = list.length;
-                for (var i=0; i<m-1; i++) {
-                    var f0 = I3DXMatrixMultiply(trans, list[i].coordinates),
-                        f1 = I3DXMatrixMultiply(trans, list[i+1].coordinates),
-                        bx0, by0, bz0,
-                        bx1, by1, bz1;
-                    bx0 = f0.data[0]/f0.data[3];
-                    by0 = f0.data[1]/f0.data[3];
-                    bz0 = f0.data[2]/f0.data[3];
-                    bx1 = f1.data[0]/f1.data[3];
-                    by1 = f1.data[1]/f1.data[3];
-                    bz1 = f1.data[2]/f1.data[3];
-
-                    /**
-                     * Given a distance along a line segment between
-                     * 0 and 1, return the appropriate color.
-                     */
-                    var a0, r0, b0, g0,
-                        a1, r1, b1, g1,
-                        da, dr, dg, db;
-                    [a0, r0, b0, g0] = unpack(list[i].color);
-                    [a1, r1, b1, g1] = unpack(list[i+1].color);
-                    da = a1 - a0;
-                    dr = r1 - r0;
-                    dg = g1 - g0;
-                    db = b1 - b0;
-                    function color (dist) {
-                        var a = Math.round(da * dist + a0),
-                            r = Math.round(dr * dist + r0),
-                            g = Math.round(dg * dist + g0),
-                            b = Math.round(db * dist + b0);
-                        return pack(a, r, g, b);
-                    }
-
-                    /**
-                     * Return a 3d, transformed, position.
-                     */
-                    var dx = bx1 - bx0,
-                        dy = by1 - by0,
-                        dz = bz1 - bz0;
-                    function pos (dist) {
-                        var x = dx * dist + bx0,
-                            y = dy * dist + by0,
-                            z = dz * dist + bz0;
-                        return [x, y, z];
-                    }
-
-                    var sx0 = Math.round((1 - bx0) * HWIDTH),
-                        sx1 = Math.round((1 - bx1) * HWIDTH);
-                    var dsx = Math.abs(sx1 - sx0);
-                    for (var j=0; j<=dsx; j++) {
-                        var dist = j/dsx;
-                        var x, y, z, c = color(dist);
-                        [x, y, z] = pos(dist);
-                        if ( Math.abs(x) < 1 &&
-                             Math.abs(y) < 1 &&
-                             Math.abs(z) < 1 ) {
-                            var sx = Math.round((1 - x) * HWIDTH),
-                                sy = Math.round((1 - y) * HHEIGHT);
-                            ZBufferSet(sx, sy, c, z);
-                        }
+                    if (mode === I3DPT_LINELIST) {
+                        // Lists are disconnected lines, so advance one more.
+                        i++;
                     }
                 }
                 break;
