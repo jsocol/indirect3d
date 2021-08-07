@@ -1,0 +1,25 @@
+{
+  "name": "indirect3d",
+  "version": "1.0.0",
+  "description": "A weird thing to play with 3d graphics",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jsocol/indirect3d.git"
+  },
+  "author": "James Socol <me@jamessocol.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jsocol/indirect3d/issues"
+  },
+  "homepage": "https://github.com/jsocol/indirect3d#readme",
+  "devDependencies": {
+    "live-server": "^1.2.1",
+    "ts-loader": "^9.2.5",
+    "typescript": "^4.3.5",
+    "webpack-cli": "^4.7.2"
+  }
+}
