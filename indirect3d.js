@@ -538,6 +538,12 @@ function I3DXDevice(container, WIDTH, HEIGHT) {
 
                     N = I3DXVectorCross(I3DXMatrixSubtract(Q, P),
                                         I3DXMatrixSubtract(R, P));
+                    
+                    const dot = I3DXVectorDot(I3DXMatrixScale(P, -1), N);
+                    console.log(`View space dot: ${dot}`);
+                    if (dot >= 0) {
+                        //continue;
+                    }
 
                     var Tp, Bp, Lp, Rp, dx, dy
                         Psx = Math.round((1 - P.data[0]) * HWIDTH),
