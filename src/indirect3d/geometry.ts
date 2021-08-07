@@ -15,11 +15,7 @@ export class I3DXVertex {
     color: Color;
 
     constructor(x: number, y: number, z: number, color: Color) {
-        const c = I3DXVector(4);
-        c.data[0] = x;
-        c.data[1] = y;
-        c.data[2] = z;
-        c.data[3] = 1;
+        const c = I3DXVector(4, [x, y, z, 1]);
         this.coordinates = c;
         this.color = color;
     }
@@ -48,25 +44,26 @@ export function I3DXMatrixLookAtLH(pEye: I3DXMatrix, pAt: I3DXMatrix, pUp: I3DXM
 }
 
 export function I3DXMatrixPerspectiveFovLH(fovy: Degrees, aspect: number, zn: number, zf: number): I3DXMatrix {
-    var y = 1/Math.tan(fovy/2);
-    const x = y/aspect;
-    const matrix = new I3DXMatrix(4, 4);
-
-    matrix.set(0, 0, x);
-    matrix.set(1, 1, y);
-    matrix.set(2, 2, zf/(zf-zn));
-    matrix.set(2, 3, 1);
-    matrix.set(3, 2, -zn*zf/(zf-zn));
-    return matrix;
+  const y = 1/Math.tan(fovy/2);
+  const x = y/aspect;
+  const zfn = zf / (zf - zn);
+  const matrix = new I3DXMatrix(4, 4, [
+    x, 0,         0, 0,
+    0, y,         0, 0,
+    0, 0,       zfn, 1,
+    0, 0, -zn * zfn, 0,
+  ]);
+  return matrix;
 }
 
 export function I3DXMatrixOrthoLH(w: number, h: number, zn: number, zf: number): I3DXMatrix {
-  const matrix = I3DXMatrixIdentity(4);
-
-  matrix.set(0, 0, 2 / w);
-  matrix.set(1, 1, 2 / h);
-  matrix.set(2, 2, 1 / (zf - zn));
-  matrix.set(3, 2, -zn / (zf - zn));
+  const zfzn = zf - zn;
+  const matrix = new I3DXMatrix(4, 4, [
+    2 / w,     0,          0, 0,
+        0, 2 / h,          0, 0,
+        0,     0,   1 / zfzn, 0,
+        0,     0, -zn / zfzn, 1,
+  ]);
 
   return matrix;
 }
