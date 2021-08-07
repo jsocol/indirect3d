@@ -23,13 +23,11 @@ export declare class I3DXDevice {
     protected _transforms: {
         [K in I3DXTransformType]: I3DXMatrix;
     };
-    protected _transformsCache: {
-        [K in I3DXTransformType]: boolean;
-    };
     protected _zbufferData: Int32Array;
     protected _zbufferDepth: Float32Array;
     constructor(container: HTMLElement, WIDTH: number, HEIGHT: number);
     SetTransform(type: I3DXTransformType, matrix: I3DXMatrix): void;
+    MultiplyTransform(type: I3DXTransformType, matrix: I3DXMatrix): void;
     BeginScene(): void;
     DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]): void;
     EndScene(): void;

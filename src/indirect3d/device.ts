@@ -46,7 +46,6 @@ export class I3DXDevice {
     protected _ctx: CanvasRenderingContext2D
     protected _backBuffer: ImageData
     protected _transforms: {[K in I3DXTransformType]: I3DXMatrix}
-    protected _transformsCache: {[K in I3DXTransformType]: boolean}
     protected _zbufferData: Int32Array
     protected _zbufferDepth: Float32Array
 
@@ -78,12 +77,6 @@ export class I3DXDevice {
             [I3DTS_PROJECTION]: defaultProjection,
         };
 
-        this._transformsCache = {
-            [I3DTS_WORLD]: false,
-            [I3DTS_VIEW]: false,
-            [I3DTS_PROJECTION]: false,
-        };
-
         const bufferLength = this.WIDTH * this.HEIGHT;
         this._zbufferData = new Int32Array(bufferLength);
         this._zbufferDepth = new Float32Array(bufferLength)
@@ -91,7 +84,10 @@ export class I3DXDevice {
 
     SetTransform(type: I3DXTransformType, matrix: I3DXMatrix) {
         this._transforms[type] = matrix;
-        this._transformsCache[type] = true;
+    }
+
+    MultiplyTransform(type: I3DXTransformType, matrix: I3DXMatrix) {
+        this._transforms[type] = I3DXMatrixMultiply(matrix, this._transforms[type]);
     }
 
     BeginScene() {
