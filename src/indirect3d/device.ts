@@ -97,8 +97,8 @@ export class I3DXDevice {
 
     DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]) {
         let transform: I3DXMatrix;
-        transform = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_PROJECTION]);
-        transform = I3DXMatrixMultiply(this._transforms[I3DTS_WORLD], transform);
+        transform = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
+        transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transform);
 
         switch(mode) {
             case I3DPT_POINTLIST:
@@ -122,8 +122,15 @@ export class I3DXDevice {
             case I3DPT_LINELIST:
             case I3DPT_LINESTRIP:
                 for (let i = 0; i < list.length - 1; i++) {
-                    const f0 = I3DXMatrixMultiply(transform, list[i].coordinates);
-                    const f1 = I3DXMatrixMultiply(transform, list[i+1].coordinates);
+                    // model space coordinates
+                    const p0 = list[i];
+                    const p1 = list[i+1];
+
+                    // These should be points in the perspective space
+                    const f0 = I3DXMatrixMultiply(transform, p0.coordinates);
+                    const f1 = I3DXMatrixMultiply(transform, p1.coordinates);
+
+                    // convert to the screen
                     const bx0 = f0.data[0] / f0.data[3];
                     const by0 = f0.data[1] / f0.data[3];
                     const bz0 = f0.data[2] / f0.data[3];
@@ -168,10 +175,13 @@ export class I3DXDevice {
                     const sx0 = Math.round((1 - bx0) * this.HWIDTH);
                     const sx1 = Math.round((1 - bx1) * this.HWIDTH);
                     const dsx = Math.abs(sx1 - sx0);
+                    // console.log(`screen x length: ${sx1} - ${sx0} = ${dsx}`);
 
                     for (let j = 0; j <= dsx; j++) {
                         const dist = j / dsx;
+                        //console.log('line dist:', dist);
                         const [x, y, z] = pos(dist);
+                        //console.log('xyz', [x, y, z]);
                         const c = color(dist);
 
                         if (
@@ -181,6 +191,7 @@ export class I3DXDevice {
                         ) {
                             const sx = Math.round((1 - x) * this.HWIDTH);
                             const sy = Math.round((1 - y) * this.HHEIGHT);
+                            // console.log(`screen coords ${[sx, sy]}`);
                             this.ZBufferSet(sx, sy, c, z);
                         }
                     }

@@ -1,68 +1,66 @@
 import { Color } from './color';
 import {
-    I3DXMatrix,
-    I3DXVector,
-    I3DXMatrixIdentity,
-    I3DXVectorUnit,
-    I3DXMatrixSubtract,
-    I3DXVectorCross,
-    I3DXVectorDot,
-    Degrees,
+  I3DXMatrix,
+  I3DXVector,
+  I3DXVectorUnit,
+  I3DXMatrixSubtract,
+  I3DXVectorCross,
+  I3DXVectorDot,
+  Degrees,
+  I3DXMatrixTranspose,
 } from './matrix';
 
 export class I3DXVertex {
-    coordinates: I3DXMatrix;
-    color: Color;
+  coordinates: I3DXMatrix
+  color: Color
 
-    constructor(x: number, y: number, z: number, color: Color) {
-        const c = I3DXVector(4, [x, y, z, 1]);
-        this.coordinates = c;
-        this.color = color;
-    }
+  constructor(x: number, y: number, z: number, color: Color) {
+    const c = I3DXVector(4, [x, y, z, 1]);
+    this.coordinates = c;
+    this.color = color;
+  }
 }
 
 export function I3DXMatrixLookAtLH(pEye: I3DXMatrix, pAt: I3DXMatrix, pUp: I3DXMatrix): I3DXMatrix {
-    const matrix = I3DXMatrixIdentity(4);
+  const zaxis = I3DXVectorUnit(I3DXMatrixSubtract(pAt, pEye));
+  const xaxis = I3DXVectorUnit(I3DXVectorCross(pUp, zaxis));
+  const yaxis = I3DXVectorCross(zaxis, xaxis);
+  const xdot = I3DXVectorDot(xaxis, pEye);
+  const ydot = I3DXVectorDot(yaxis, pEye);
+  const zdot = I3DXVectorDot(zaxis, pEye);
 
-    const zaxis = I3DXVectorUnit(I3DXMatrixSubtract(pAt, pEye));
-    const xaxis = I3DXVectorUnit(I3DXVectorCross(pUp, zaxis));
-    const yaxis = I3DXVectorCross(zaxis, xaxis);
+  const matrix = new I3DXMatrix(4, 4, [
+    xaxis.data[0], xaxis.data[1], xaxis.data[2], -xdot,
+    yaxis.data[0], yaxis.data[1], yaxis.data[2], -ydot,
+    zaxis.data[0], zaxis.data[1], zaxis.data[2], -zdot,
+                0,             0,             0,     1,
+  ]);
 
-    matrix.set(0, 0, xaxis.data[0]);
-    matrix.set(1, 0, xaxis.data[1]);
-    matrix.set(2, 0, xaxis.data[2]);
-    matrix.set(3, 0, -I3DXVectorDot(xaxis, pEye));
-    matrix.set(0, 1, yaxis.data[0]);
-    matrix.set(1, 1, yaxis.data[1]);
-    matrix.set(2, 1, yaxis.data[2]);
-    matrix.set(3, 1, -I3DXVectorDot(yaxis, pEye));
-    matrix.set(0, 2, zaxis.data[0]);
-    matrix.set(1, 2, zaxis.data[1]);
-    matrix.set(2, 2, zaxis.data[2]);
-    matrix.set(3, 2, -I3DXVectorDot(zaxis, pEye));
-    return matrix;
+  return matrix;
 }
 
 export function I3DXMatrixPerspectiveFovLH(fovy: Degrees, aspect: number, zn: number, zf: number): I3DXMatrix {
   const y = 1/Math.tan(fovy/2);
   const x = y/aspect;
   const zfn = zf / (zf - zn);
+
   const matrix = new I3DXMatrix(4, 4, [
-    x, 0,         0, 0,
-    0, y,         0, 0,
-    0, 0,       zfn, 1,
-    0, 0, -zn * zfn, 0,
+    x, 0,   0, 0,
+    0, y,   0, 0,
+    0, 0, zfn, -zn * zfn,
+    0, 0,   1, 0,
   ]);
+
   return matrix;
 }
 
 export function I3DXMatrixOrthoLH(w: number, h: number, zn: number, zf: number): I3DXMatrix {
   const zfzn = zf - zn;
   const matrix = new I3DXMatrix(4, 4, [
-    2 / w,     0,          0, 0,
-        0, 2 / h,          0, 0,
-        0,     0,   1 / zfzn, 0,
-        0,     0, -zn / zfzn, 1,
+    2 / w,     0,        0,          0,
+        0, 2 / h,        0,          0,
+        0,     0, 1 / zfzn, -zn / zfzn,
+        0,     0,        0,          1,
   ]);
 
   return matrix;
