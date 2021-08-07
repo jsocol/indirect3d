@@ -63,10 +63,12 @@
       <dd>Refactor and clean-up LINELIST and LINESTRIP modes to share common functionality.</dd>
       <dd>Implement barycentric coordinate calculation for triangle color blending.</dd>
       <dd>Calculate triangle color blending in CIELAB space rather than sRGB space.</dd>
+      <dd>Fix row-major/column-major disconnect and transpose transformation matrices.</dd>
     </dl>
 
     <h2>Known issues and ToDos</h2>
     <ul>
+      <li>The alpha-blending algorithm WAS basically accurate, but is wrong now.</li>
       <li>Line color blending is still done in sRGB space. Will probably look better in CIELAB.</li>
       <li>There's a lot of packing and unpacking RGBA values into Int32 and it's sometimes error prone. Is it necessary? Could <code>Color</code> be a struct (or a few structs for different color spaces)?</li>
       <li>Triangle color calculation is based on <em>view space</em> coordinates, not the actual coordinates.</li>
@@ -85,7 +87,6 @@
 
     <h2>Things that work pretty well</h2>
     <ul>
-      <li>The alpha-blending algorithm seems basically accurate.</li>
       <li>Barycentric coordinates work great for triangle coloring.</li>
       <li>sRGB—XYZ—CIELAB color space conversion, and doing the color blending in CIELAB, looks real nice.</li>
     </ul>
