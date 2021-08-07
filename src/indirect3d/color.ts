@@ -53,7 +53,7 @@ export function LabToColor(L: number, a: number, b: number): Color {
 
 // These conversions come from http://www.easyrgb.com/en/math.php
 
-function RGBToXYZ(r: number, g: number, b: number): [number, number, number] {
+export function RGBToXYZ(r: number, g: number, b: number): [number, number, number] {
     let rf = r / 255;
     let gf = g / 255;
     let bf = b / 255;
@@ -89,37 +89,37 @@ function RGBToXYZ(r: number, g: number, b: number): [number, number, number] {
     ];
 }
 
-function XYZToRGB(x: number, y: number, z: number): [number, number, number] {
-    const vx = x / 100;
-    const vy = y / 100;
-    const vz = z / 100;
+export function XYZToRGB(x: number, y: number, z: number): [number, number, number] {
+    const vx = x / 100.0;
+    const vy = y / 100.0;
+    const vz = z / 100.0;
 
-    let vr = vx * 3.2406 + vy * -1.5372 + vz * -0.4986;
-    let vg = vx * -0.9689 + vy * 1.8758 + vz * 0.0415;
-    let vb = vx * 0.0557 + vy * -0.2040 + vz * 1.0570;
+    let vr = vx *  3.2406 + vy * -1.5372 + vz * -0.4986;
+    let vg = vx * -0.9689 + vy *  1.8758 + vz *  0.0415;
+    let vb = vx *  0.0557 + vy * -0.2040 + vz *  1.0570;
 
-    if (vr > 0.0031308) {
-        vr = 1.055 * (Math.pow(vr, (1/2.4))) - 0.55;
+    if (Math.abs(vr) > 0.0031308) {
+        vr = 1.055 * (Math.pow(vr, (1/2.4))) - 0.055;
     } else {
         vr = 12.92 * vr;
     }
 
-    if (vg > 0.0031308) {
-        vg = 1.055 * (Math.pow(vg, (1/2.4))) - 0.55;
+    if (Math.abs(vg) > 0.0031308) {
+        vg = 1.055 * (Math.pow(vg, (1/2.4))) - 0.055;
     } else {
         vg = 12.92 * vg;
     }
 
-    if (vb > 0.0031308) {
-        vb = 1.055 * (Math.pow(vb, (1/2.4))) - 0.55;
+    if (Math.abs(vb) > 0.0031308) {
+        vb = 1.055 * (Math.pow(vb, (1/2.4))) - 0.055;
     } else {
         vb = 12.92 * vb;
     }
 
     return [
-        Math.round(vr * 255),
-        Math.round(vg * 255),
-        Math.round(vb * 255),
+        Math.min(Math.max(Math.round(vr * 255), 0), 255),
+        Math.min(Math.max(Math.round(vg * 255), 0), 255),
+        Math.min(Math.max(Math.round(vb * 255), 0), 255),
     ];
 }
 
@@ -128,7 +128,7 @@ const RefX = 95.047;
 const RefY = 100;
 const RefZ = 108.883;
 
-function XYZToLab(x: number, y: number, z: number): [number, number, number] {
+export function XYZToLab(x: number, y: number, z: number): [number, number, number] {
     let vx = x / RefX;
     let vy = y / RefY;
     let vz = z / RefZ;
@@ -158,9 +158,9 @@ function XYZToLab(x: number, y: number, z: number): [number, number, number] {
     ];
 }
 
-function LabToXYZ(L: number, a: number, b: number): [number, number, number] {
+export function LabToXYZ(L: number, a: number, b: number): [number, number, number] {
     let vy = (L + 16) / 116;
-    let vx = a / 500 - vy;
+    let vx = a / 500 + vy;
     let vz = vy - b / 200;
 
     if (Math.pow(vx, 3) > 0.008856) {

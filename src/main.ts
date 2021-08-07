@@ -17,6 +17,7 @@ import {
     I3DPT_LINELIST,
     I3DPT_LINESTRIP,
     ARGB,
+    I3DXMatrixSubtract,
 } from './indirect3d';
 
 (function main() {
@@ -51,7 +52,7 @@ import {
             I3DXVector3(0, 0, 0), // the "look-at" position
             I3DXVector3(0, 1, 0)), // the "up" direction
         matProj = I3DXMatrixPerspectiveFovLH(
-            I3DXToRadian(45), // the horizontal field of view
+            I3DXToRadian(20), // the horizontal field of view
             WIDTH / HEIGHT, // aspect ratio
             1.0, // near view-plane
             100.0); // far view-plane
@@ -70,14 +71,15 @@ import {
     function play() {
         console.time('frame');
         i3d.BeginScene();
-        var rot = I3DXRotateYMatrix(idx);
-        var rev = I3DXRotateYMatrix(-idx);
+        const rot = I3DXRotateYMatrix(idx);
+        // const rev = I3DXRotateYMatrix(-idx);
 
-        var left = I3DXTranslateMatrix(0, 0, 150);
+        const left = I3DXTranslateMatrix(idx, Math.cos(idx), Math.sin(idx));
 
-        i3d.SetTransform(I3DTS_WORLD, I3DXMatrixAdd(I3DXMatrixMultiply(rot, id), left));
+        i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(rot, id));
         i3d.DrawPrimitive(I3DPT_TRIANGLELIST, movingTriangle);
-        i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(rev, id));
+        //i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(rev, id));
+        i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(I3DXMatrixAdd(id, left), rot));
         i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
         i3d.EndScene();
         i3d.Present();
@@ -113,14 +115,3 @@ import {
     i3d.Present();
     console.log("End Construct scene", new Date());
 })();
-
-import { XRGB, ColorToLab, LabToColor } from './indirect3d/color';
-
-const red = XRGB(0xff, 0, 0);
-console.log('red as int:', red);
-
-const lab = ColorToLab(red);
-console.log('in lab:', lab);
-
-const rered = LabToColor(...lab);
-console.log('as int again:', rered);

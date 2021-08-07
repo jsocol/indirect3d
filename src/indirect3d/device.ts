@@ -257,12 +257,12 @@ export class I3DXDevice {
 
                                 const c = pack(
                                     Pa * Wp + Qa * Wq + Ra * Wr,
-                                    Pr * Wp + Qr * Wq + Rr * Wr,
+                                    /*Pr * Wp + Qr * Wq + Rr * Wr,
                                     Pg * Wp + Qg * Wq + Rg * Wr,
-                                    Pb * Wp + Qb * Wq + Rb * Wr,
-                                    /*vr,
+                                    Pb * Wp + Qb * Wq + Rb * Wr,*/
+                                    vr,
                                     vg,
-                                    vb,*/
+                                    vb,
                                 );
                                 this.ZBufferSet(x, y, c, z);
                             }
