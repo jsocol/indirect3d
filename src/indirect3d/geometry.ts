@@ -60,6 +60,16 @@ export function I3DXMatrixPerspectiveFovLH(fovy: Degrees, aspect: number, zn: nu
     return matrix;
 }
 
+export function I3DXMatrixOrthoLH(w: number, h: number, zn: number, zf: number): I3DXMatrix {
+  const matrix = I3DXMatrixIdentity(4);
+
+  matrix.set(0, 0, 2 / w);
+  matrix.set(1, 1, 2 / h);
+  matrix.set(2, 2, 1 / (zf - zn));
+  matrix.set(3, 2, -zn / (zf - zn));
+
+  return matrix;
+}
 
 export function I3DXBarycentricCoords(x: number, y: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): [number, number, number] {
     const y2y3 = y2 - y3;
