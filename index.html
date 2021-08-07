@@ -31,6 +31,16 @@
   <article>
     <a href="http://github.com/jsocol/indirect3d"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
     <div id="indirect-container"></div>
+    <div id="scene-controls">
+      <label>Blue depth <input id="blue-depth-input" type="number" size="3" value="1.0" step="0.1"></label>
+      <label>Red depth <input id="red-depth-input" type="number" size="3" value="-0.5" step="0.1"></label>
+      <div>Camera (looking at 0,0,0)<br>
+        <label>X <input id="camera-x" type="number" size="3" value="0.0" step="0.1"></label><br>
+        <label>Y <input id="camera-y" type="number" size="3" value="0.0" step="0.1"></label> (+Y is up)<br>
+        <label>Z <input id="camera-z" type="number" size="3" value="30.0" step="0.1"></label><br>
+        <label>Field of view angle (degrees) <input id="fovy" type="number" size="3" value="30" step="1"></label>
+      </div>
+    </div>
     <h1>Indirect3D</h1>
 
     <p>Indirect3D is a completely ridiculous attempt to implement a significant portion of the DirectX / Direct3D API using a HTML canvas's <strong>2d</strong> context. That means doing all the math in JS.</p>
@@ -83,4 +93,4 @@
   <script src="./build/index.js"></script>
 </body>
 </html>
-<!-- vim: ts=2 sts=2 sw=2: >
+<!-- vim: set ts=2 sts=2 sw=2: -->
