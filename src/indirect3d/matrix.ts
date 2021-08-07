@@ -3,13 +3,20 @@ export class I3DXMatrix {
     cols: number;
     data: Float32Array;
 
-    constructor(rows: number, cols: number) {
+    constructor(rows: number, cols: number, data?: number[]) {
         if (typeof cols == 'undefined') {
             cols = rows;
         }
         this.rows = rows; // m
         this.cols = cols; // n
-        this.data = new Float32Array(rows*cols);
+        if (data) {
+            if (data.length !== rows * cols) {
+                throw new Error("data does not match matrix dimension");
+            }
+            this.data = Float32Array.from(data);
+        } else {
+            this.data = new Float32Array(rows * cols);
+        }
     }
 
     _idx(i: number, j: number): number {
@@ -203,20 +210,13 @@ export function I3DXMatrixScale(A: I3DXMatrix, s: number): I3DXMatrix {
     return B;
 }
 
-export function I3DXVector(m: number): I3DXMatrix {
-    return new I3DXMatrix(m, 1);
+export function I3DXVector(m: number, data?: number[]): I3DXMatrix {
+    return new I3DXMatrix(m, 1, data);
 }
 
 export function I3DXVector3(x: number, y: number, z: number): I3DXMatrix {
-    const v = I3DXVector(3);
-    v.data[0] = x;
-    v.data[1] = y;
-    v.data[2] = z;
+    const v = I3DXVector(3, [x, y, z]);
     return v;
-}
-
-export function I3DXVectorUnit(a: I3DXMatrix): I3DXMatrix {
-    return I3DXMatrixScale(a, 1/I3DXVectorLength(a));
 }
 
 export function I3DXVectorCross(a: I3DXMatrix, b: I3DXMatrix): I3DXMatrix {
@@ -241,4 +241,8 @@ export function I3DXVectorDot(a: I3DXMatrix, b: I3DXMatrix): number {
 
 export function I3DXVectorLength(a: I3DXMatrix): number {
     return Math.sqrt(I3DXVectorDot(a, a));
+}
+
+export function I3DXVectorUnit(a: I3DXMatrix): I3DXMatrix {
+    return I3DXMatrixScale(a, 1 / I3DXVectorLength(a));
 }
