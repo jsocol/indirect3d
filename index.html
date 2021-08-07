@@ -8,11 +8,15 @@
     background-color: #fff;
     font-family: Georgia, "Times New Roman", Times, serif;
   }
+  article,
   canvas,
   h1, h2,
   p, ul {
     margin: 20px auto;
     width: 640px;
+  }
+  dt {
+    font-weight: bold;
   }
   li > ul {
     margin: 0;
@@ -24,41 +28,59 @@
   </style>
 </head>
 <body>
-  <a href="http://github.com/jsocol/indirect3d"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
-  <div id="indirect-container"></div>
-  <h1>Indirect3D</h1>
-  <p><strong>This may well crash your browser!</strong> You probably
-    don't want to try to run the animation in an instance where you're
-    doing anything important.</p>
-  <p>The animation is two triangles, defined as a set of vertexes, each
-    with a position and a primary color with 50% alpha. One triangle is
-    fixed in space while the other one moves around it.</p>
-  <p>Only runs in <strong><a href="http://nightly.mozilla.org/">Firefox
-    4</a></strong> for some reason. Chromium doesn't give any errors
-    but doesn't work, either.</p>
-  <p>To start, hit <strong>Enter</strong>. To stop, hit
-    <strong>Esc</strong>.</p>
-  <h2>Known issues</h2>
-  <ul>
-    <li>Something is not transforming correctly, at all.
-      <ul>
-        <li>The moving triangle should rotate in place.</li>
-        <li>When I order the transforms the way I think I should, things get very weird.</li>
-        <li>Moving the camera doesn't quite do what you thing it will.</li>
-      </ul>
-    </li>
-    <li>No triangle culling yet, which leads to...</li>
-    <li>...aberrant behavior with triangles of certain orientations.</li>
-    <li><s>It's slow as hell, but I don't think that will change.</s><br>
-        So it turns out browsers got a <em>lot</em> faster.
-    </li>
-    <li>The aliasing, oh god the aliasing!</li>
-  </ul>
-  <h2>Things that work pretty well</h2>
-  <ul>
-    <li>The alpha-blending algorithm seems basically accurate.</li>
-    <li>Barycentric coordinates work great for triangle coloring.</li>
-    <li>Coloring algorithm for lines is spot on, at least for low-distortion projections.</li>
-  </ul>
+  <article>
+    <a href="http://github.com/jsocol/indirect3d"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+    <div id="indirect-container"></div>
+    <h1>Indirect3D</h1>
+
+    <p>Indirect3D is a completely ridiculous attempt to implement a significant portion of the DirectX / Direct3D API using a HTML canvas's <strong>2d</strong> context. That means doing all the math in JS.</p>
+
+    <p>I started this project at least 10 years ago. It's based on DX9, which came out in 2002—but it's not <em>quite</em> that old.</p>
+
+    <p>In 2021, for no especially clear reason, I started working on it again. A rough changelog is below.</p>
+
+    <p>In modern browsers in 2021, it actually runs fairly quickly. As long as it's not trying to do much.</p>
+
+    <p>To start some random animation, hit <strong>Enter</strong>. To stop, hit <strong>Esc</strong>.</p>
+
+    <h2>Changelog</h2>
+
+    <dl>
+      <dt>July 2021</dt>
+      <dd>Convert to TypeScript. Add webpack and TS configs.</dd>
+      <dd>Organize into more, smaller files.</dd>
+      <dd>Fix bug transposing g and b color channels in triangle list.</dd>
+      <dd>Refactor and clean-up LINELIST and LINESTRIP modes to share common functionality.</dd>
+      <dd>Implement barycentric coordinate calculation for triangle color blending.</dd>
+      <dd>Calculate triangle color blending in CIELAB space rather than sRGB space.</dd>
+    </dl>
+
+    <h2>Known issues and ToDos</h2>
+    <ul>
+      <li>Line color blending is still done in sRGB space. Will probably look better in CIELAB.</li>
+      <li>There's a lot of packing and unpacking RGBA values into Int32 and it's sometimes error prone. Is it necessary? Could <code>Color</code> be a struct (or a few structs for different color spaces)?</li>
+      <li>Triangle color calculation is based on <em>view space</em> coordinates, not the actual coordinates.</li>
+      <li>Something is not transforming correctly, at all.
+        <ul>
+          <li>The moving triangle should rotate in place.</li>
+          <li>When I order the transforms the way I think I should, things get very weird.</li>
+          <li>Moving the camera doesn't quite do what you thing it will.</li>
+        </ul>
+      </li>
+      <li>TRIANGLELIST mode seems to be working as a TRIANGLELIST, but I'm not sure why? It seems like it should be working like a TRIANGLESTRIP right now. Very confused.</li>
+      <li>No triangle culling yet, which leads to...</li>
+      <li>...aberrant behavior with triangles of certain orientations.</li>
+      <li>The aliasing, oh god the aliasing!</li>
+    </ul>
+
+    <h2>Things that work pretty well</h2>
+    <ul>
+      <li>The alpha-blending algorithm seems basically accurate.</li>
+      <li>Barycentric coordinates work great for triangle coloring.</li>
+      <li>sRGB—XYZ—CIELAB color space conversion, and doing the color blending in CIELAB, looks real nice.</li>
+    </ul>
+  </article>
   <script src="./build/index.js"></script>
 </body>
+</html>
+<!-- vim: ts=2 sts=2 sw=2: >
