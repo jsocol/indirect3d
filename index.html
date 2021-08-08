@@ -42,9 +42,9 @@
       </div>
       <div>
         Camera direction
-        <label>X <input id="direction-x" type="number" size="3" value="0.0" step="0.1"></label>
-        <label>Y <input id="direction-y" type="number" size="3" value="0.0" step="0.1"></label> (+Y is up)
-        <label>Z <input id="direction-z" type="number" size="3" value="-1.0" step="0.1"></label>
+        <label>X <input id="direction-x" type="number" size="3" value="0.0" step="0.1" disabled></label>
+        <label>Y <input id="direction-y" type="number" size="3" value="0.0" step="0.1" disabled></label> (+Y is up)
+        <label>Z <input id="direction-z" type="number" size="3" value="-1.0" step="0.1" disabled></label>
       </div>
       <label>Field of view angle (degrees) <input id="fovy" type="number" size="3" value="30" step="1"></label>
     </div>
@@ -62,9 +62,7 @@
 
     <p>In the scene above, the red and blue triangle have the same vertex model coordinates and same xy translation with offset z depth. You can control that with the red and blue depth controls above.</p>
 
-    <p>The camera position and direction can be adjusted with the next two sets of controls. The direction is a vector (doesn't have to be a unit vector) <em>from the camera</em>, but necessarily not in camera coordinates.</p>
-
-    <p>Try moving the camera to something like (30, 0, 1) and the direction to (-1, 0, 0)! You can move while the animation is running.</p>
+    <p>Try WASD and QE 😉.</p>
 
     <p>Finally you can mess with the field of view angle if you want. I don't know what normal cameras are.</p>
     

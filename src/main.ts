@@ -19,6 +19,11 @@ import {
   ARGB,
   XRGB,
   I3DXMatrixLookToLH,
+  I3DXMatrixScale,
+  I3DXVectorUnit,
+  I3DXMatrixAdd,
+  I3DXVector,
+  I3DXVectorCross,
 } from './indirect3d';
 
 (function main() {
@@ -52,6 +57,7 @@ import {
 
 
   const id = I3DXMatrixIdentity(4);
+  const vUp = I3DXVector3(0, 1, 0);
 
   const triLeftFront = [
     new I3DXVertex(0, 0, 0, ARGB(0x80, 0, 0, 0xff)),
@@ -65,11 +71,12 @@ import {
     new I3DXVertex(6, 0, 0, XRGB(0xff, 0, 0)),
   ];
 
+  let facing = I3DXVector(4, [0, 0, -1, 0]);
 
   const matView = I3DXMatrixLookToLH(
     I3DXVector3(camXInput.valueAsNumber, camYInput.valueAsNumber, camZInput.valueAsNumber), // the camera position
-    I3DXVector3(dirXInput.valueAsNumber, dirYInput.valueAsNumber, dirZInput.valueAsNumber), // the "look-to" direction
-    I3DXVector3(0, 1, 0), // the "up" direction
+    I3DXVector3(facing.data[0], facing.data[1], facing.data[2]), // the "look-to" direction
+    vUp, // the "up" direction
   );
   const matProj = I3DXMatrixPerspectiveFovLH(
     I3DXToRadian(fovyInput.valueAsNumber), // the horizontal field of view
@@ -85,16 +92,69 @@ import {
   i3d.SetTransform(I3DTS_WORLD, id);
 
   let idx = 0;
+  let dPosition = 0.2;
+  let dTheta = 0.005;
   let isPlaying = false;
   let lastFrameEnd: number;
+  const keys: Record<string, boolean> = {
+    'KeyW': false, // forward
+    'KeyQ': false, // strafe left
+    'KeyE': false, // strafe right
+    'KeyS': false, // backward
+    'KeyA': false, // turn left
+    'KeyD': false, // turn right
+  };
   function play() {
     //console.time('frame');
+    const now = Date.now();
+    const dt = now - lastFrameEnd;
+
     i3d.BeginScene();
+
+    // turning
+    facing = I3DXVectorUnit(I3DXVector(4, [dirXInput.valueAsNumber, dirYInput.valueAsNumber, dirZInput.valueAsNumber, 1]));
+    if (keys['KeyA']) {
+      const rotate = I3DXRotateYMatrix(dTheta * dt);
+      facing = I3DXMatrixMultiply(rotate, facing);
+    } else if (keys['KeyD']) {
+      const rotate = I3DXRotateYMatrix(-dTheta * dt);
+      facing = I3DXMatrixMultiply(rotate, facing);
+    }
+
+    dirXInput.valueAsNumber = facing.data[0];
+    dirYInput.valueAsNumber = facing.data[1];
+    dirZInput.valueAsNumber = facing.data[2];
+
+    // moving
+    if (keys['KeyW']) {
+      const mvmt = I3DXMatrixScale(facing, dPosition * dt);
+      camXInput.valueAsNumber += mvmt.data[0];
+      camYInput.valueAsNumber += mvmt.data[1];
+      camZInput.valueAsNumber += mvmt.data[2];
+    } else if (keys['KeyS']) {
+      const mvmt = I3DXMatrixScale(facing, -dPosition * dt);
+      camXInput.valueAsNumber += mvmt.data[0];
+      camYInput.valueAsNumber += mvmt.data[1];
+      camZInput.valueAsNumber += mvmt.data[2];
+    }
+    if (keys['KeyQ']) {
+      const vLeft = I3DXVectorUnit(I3DXVectorCross(vUp, facing));
+      const mvmt = I3DXMatrixScale(vLeft, dPosition * dt / 10);
+      camXInput.valueAsNumber += mvmt.data[0];
+      camYInput.valueAsNumber += mvmt.data[1];
+      camZInput.valueAsNumber += mvmt.data[2];
+    } else if (keys['KeyE']) {
+      const vLeft = I3DXVectorUnit(I3DXVectorCross(vUp, facing));
+      const mvmt = I3DXMatrixScale(vLeft, -dPosition * dt / 10);
+      camXInput.valueAsNumber += mvmt.data[0];
+      camYInput.valueAsNumber += mvmt.data[1];
+      camZInput.valueAsNumber += mvmt.data[2];
+    }
 
     const matView = I3DXMatrixLookToLH(
       I3DXVector3(camXInput.valueAsNumber, camYInput.valueAsNumber, camZInput.valueAsNumber), // the camera position
-      I3DXVector3(dirXInput.valueAsNumber, dirYInput.valueAsNumber, dirZInput.valueAsNumber), // the "look-to" direction
-      I3DXVector3(0, 1, 0), // the "up" direction
+      I3DXVector3(facing.data[0], facing.data[1], facing.data[2]), // the "look-to" direction
+      vUp, // the "up" direction
     );
     const matProj = I3DXMatrixPerspectiveFovLH(
       I3DXToRadian(fovyInput.valueAsNumber), // the horizontal field of view
@@ -131,8 +191,6 @@ import {
     i3d.Present();
 
     //console.timeEnd('frame');
-    const now = Date.now();
-    const dt = now - lastFrameEnd;
     idx += 0.005 * dt;
     if (isPlaying) {
         requestAnimationFrame(play);
@@ -140,8 +198,16 @@ import {
     lastFrameEnd = now;
   }
 
+  window.addEventListener('keydown', function(e) {
+    if (e.code in keys) {
+      keys[e.code] = true;
+    }
+  });
+
   window.addEventListener('keyup', function(e) {
-    if (e.keyCode == 13) {
+    if (e.code in keys) {
+      keys[e.code] = false;
+    } else if (e.code == 'Enter') {
       isPlaying = !isPlaying;
       if (isPlaying) {
         lastFrameEnd = Date.now();
