@@ -28,6 +28,7 @@ import {
   I3DPT_TRIANGLESTRIP,
   I3DPT_TRIANGLEFAN,
   I3DXRotateXMatrix,
+  I3DXScaleMatrix,
 } from './indirect3d';
 
 (function main() {
@@ -62,12 +63,50 @@ import {
     new I3DXVertex(-1, 0, 0, XRGB(0xff, 0x40, 0x40)),
   ];
 
-  const movingTriangle = [
-    new I3DXVertex(2.5, -3.0, 0, ARGB(0x40,0,0,0xff)),
-    new I3DXVertex(0.0, 3.0, 0, ARGB(0x40,0,0,0xff)),
-    new I3DXVertex(-2.5, -3.0, 0, ARGB(0x40,0,0,0xff)),
+  const yellow = XRGB(0xff, 0xff, 0x00);
+  const darkyellow = XRGB(0xc0, 0x8f, 0x40);
+  const root2o2 = Math.sqrt(2) / 2;
+  const root2m2 = Math.sqrt(2 - Math.sqrt(2)) / 2;
+  const root2p2 = Math.sqrt(2 + Math.sqrt(2)) / 2;
+  const ring = [
+    new I3DXVertex(1, 1, 0, yellow),
+    new I3DXVertex(root2p2, 0, root2m2, darkyellow),
+    new I3DXVertex(root2o2, 1, root2o2, yellow),
+    new I3DXVertex(root2m2, 0, root2p2, darkyellow),
+    new I3DXVertex(0, 1, 1, yellow),
+    new I3DXVertex(-root2m2, 0, root2p2, darkyellow),
+    new I3DXVertex(-root2o2, 1, root2o2, yellow),
+    new I3DXVertex(-root2p2, 0, root2m2, darkyellow),
+    new I3DXVertex(-1, 1, 0, yellow),
+    new I3DXVertex(-root2p2, 0, -root2m2, darkyellow),
+    new I3DXVertex(-root2o2, 1, -root2o2, yellow),
+    new I3DXVertex(-root2m2, 0, -root2p2, darkyellow),
+    new I3DXVertex(0, 1, -1, yellow),
+    new I3DXVertex(root2m2, 0, -root2p2, darkyellow),
+    new I3DXVertex(root2o2, 1, -root2o2, yellow),
+    new I3DXVertex(root2p2, 0, -root2m2, darkyellow),
+    new I3DXVertex(1, 1, 0, yellow),
+    new I3DXVertex(root2p2, 0, root2m2, darkyellow),
+    new I3DXVertex(root2o2, 1, root2o2, yellow),
+    new I3DXVertex(root2p2, 0, root2m2, darkyellow),
+    new I3DXVertex(1, 1, 0, yellow),
+    new I3DXVertex(root2p2, 0, -root2m2, darkyellow),
+    new I3DXVertex(root2o2, 1, -root2o2, yellow),
+    new I3DXVertex(root2m2, 0, -root2p2, darkyellow),
+    new I3DXVertex(0, 1, -1, yellow),
+    new I3DXVertex(-root2m2, 0, -root2p2, darkyellow),
+    new I3DXVertex(-root2o2, 1, -root2o2, yellow),
+    new I3DXVertex(-root2p2, 0, -root2m2, darkyellow),
+    new I3DXVertex(-1, 1, 0, yellow),
+    new I3DXVertex(-root2p2, 0, root2m2, darkyellow),
+    new I3DXVertex(-root2o2, 1, root2o2, yellow),
+    new I3DXVertex(-root2m2, 0, root2p2, darkyellow),
+    new I3DXVertex(0, 1, 1, yellow),
+    new I3DXVertex(root2m2, 0, root2p2, darkyellow),
+    new I3DXVertex(root2o2, 1, root2o2, yellow),
+    new I3DXVertex(root2p2, 0, root2m2, darkyellow),
+    new I3DXVertex(1, 1, 0, yellow),
   ];
-
 
   const id = I3DXMatrixIdentity(4);
   const vUp = I3DXVector3(0, 1, 0);
@@ -190,17 +229,15 @@ import {
     i3d.SetTransform(I3DTS_WORLD, redTransform);
     i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftBack);
 
-    // const rot = I3DXRotateYMatrix(idx);
-
-    // i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(I3DXRotateXMatrix(90), rot));
-    // i3d.DrawPrimitive(I3DPT_TRIANGLELIST, movingTriangle);
+    i3d.SetTransform(I3DTS_WORLD, I3DXScaleMatrix(2, 1, 2));
+    i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, ring);
 
     const left = I3DXTranslateMatrix(0, 0, Math.sin(idx / 2));
 
     i3d.SetTransform(I3DTS_WORLD, left);
     i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, fixedTriangle);
 
-    i3d.SetTransform(I3DTS_WORLD, id);
+    i3d.SetTransform(I3DTS_WORLD, I3DXTranslateMatrix(8, 0, 0));
     i3d.DrawPrimitive(I3DPT_TRIANGLEFAN, pyramid);
 
     i3d.EndScene();
@@ -237,15 +274,8 @@ import {
   i3d.BeginScene();
   i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, fixedTriangle);
 
-  const blueDepth = blueDepthInput.valueAsNumber;
-  const blueTransform = I3DXTranslateMatrix(-9, 2, blueDepth);
-  i3d.SetTransform(I3DTS_WORLD, blueTransform);
-  i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftFront);
-
-  const redDepth = redDepthInput.valueAsNumber;
-  const redTransform = I3DXTranslateMatrix(-9, 2, redDepth);
-  i3d.SetTransform(I3DTS_WORLD, redTransform);
-  i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftBack);
+  i3d.SetTransform(I3DTS_WORLD, I3DXScaleMatrix(2, 1, 2));
+  i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, ring);
 
   i3d.EndScene();
   i3d.Present();
