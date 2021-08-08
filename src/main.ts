@@ -25,6 +25,9 @@ import {
   I3DXVector,
   I3DXVectorCross,
   I3DXVec,
+  I3DPT_TRIANGLESTRIP,
+  I3DPT_TRIANGLEFAN,
+  I3DXRotateXMatrix,
 } from './indirect3d';
 
 (function main() {
@@ -45,11 +48,20 @@ import {
   const blueDepthInput = document.getElementById('blue-depth-input')! as HTMLInputElement;
 
   const fixedTriangle = [
-    new I3DXVertex(2.5, -3.0, 1.0, ARGB(0xff,0,0,0xff)),
-    new I3DXVertex(-2.5, -3.0, 1.0, ARGB(0xff,0xff,0,0)),
-    new I3DXVertex(0.0, 3.0, 1.0, ARGB(0xff,0,0xff,0)),
-    new I3DXVertex(2.5, -3.0, 1.0, ARGB(0xff,0,0,0xff)),
+    new I3DXVertex(-2.5, -3.0, 0.0, ARGB(0xff,0xff,0,0)),
+    new I3DXVertex(0.0, 3.0, 0.0, ARGB(0xff,0,0xff,0)),
+    new I3DXVertex(2.5, -3.0, 0.0, ARGB(0xff,0,0,0xff)),
   ];
+
+  const pyramid = [
+    new I3DXVertex(0, 1, 0, XRGB(0xff, 0xff, 0xff)),
+    new I3DXVertex(-1, 0, 0, XRGB(0xff, 0x40, 0x40)),
+    new I3DXVertex(0, 0, -1, XRGB(0xff, 0xff, 0x40)),
+    new I3DXVertex(1, 0, 0, XRGB(0x40, 0x40, 0xff)),
+    new I3DXVertex(0, 0, 1, XRGB(0x40, 0xff, 0x40)),
+    new I3DXVertex(-1, 0, 0, XRGB(0xff, 0x40, 0x40)),
+  ];
+
   const movingTriangle = [
     new I3DXVertex(2.5, -3.0, 0, ARGB(0x40,0,0,0xff)),
     new I3DXVertex(0.0, 3.0, 0, ARGB(0x40,0,0,0xff)),
@@ -178,15 +190,18 @@ import {
     i3d.SetTransform(I3DTS_WORLD, redTransform);
     i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftBack);
 
-    const rot = I3DXRotateYMatrix(idx);
+    // const rot = I3DXRotateYMatrix(idx);
 
-    i3d.SetTransform(I3DTS_WORLD, rot);
-    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, movingTriangle);
+    // i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(I3DXRotateXMatrix(90), rot));
+    // i3d.DrawPrimitive(I3DPT_TRIANGLELIST, movingTriangle);
 
     const left = I3DXTranslateMatrix(0, 0, Math.sin(idx / 2));
 
     i3d.SetTransform(I3DTS_WORLD, left);
-    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
+    i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, fixedTriangle);
+
+    i3d.SetTransform(I3DTS_WORLD, id);
+    i3d.DrawPrimitive(I3DPT_TRIANGLEFAN, pyramid);
 
     i3d.EndScene();
     i3d.Present();
@@ -220,7 +235,7 @@ import {
   }, true);
 
   i3d.BeginScene();
-  i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
+  i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, fixedTriangle);
 
   const blueDepth = blueDepthInput.valueAsNumber;
   const blueTransform = I3DXTranslateMatrix(-9, 2, blueDepth);

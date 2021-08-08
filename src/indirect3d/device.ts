@@ -207,10 +207,33 @@ export class I3DXDevice {
                 }
                 break;
             case I3DPT_TRIANGLELIST:
-                for (let i = 0; i < list.length - 2; i++) {
+            case I3DPT_TRIANGLESTRIP:
+            case I3DPT_TRIANGLEFAN:
+                for (let m = 0; m < list.length - 2; ) {
+                    let i: number, j: number, k: number;
+
+                    if (mode === I3DPT_TRIANGLELIST) {
+                        i = m;
+                        j = m + 1;
+                        k = m + 2;
+                        m += 3;
+                    } else if (mode === I3DPT_TRIANGLESTRIP) {
+                        i = m;
+                        j = m + 1;
+                        k = m + 2;
+                        if (m % 2 === 1) {
+                            [j, k] = [k, j]
+                        }
+                        m++;
+                    } else {
+                        i = 0;
+                        j = m + 1;
+                        k = m + 2;
+                        m++;
+                    }
                     const p = I3DXMatrixMultiply(transform, list[i].coordinates);
-                    const q = I3DXMatrixMultiply(transform, list[i+1].coordinates);
-                    const r = I3DXMatrixMultiply(transform, list[i+2].coordinates);
+                    const q = I3DXMatrixMultiply(transform, list[j].coordinates);
+                    const r = I3DXMatrixMultiply(transform, list[k].coordinates);
 
                     const P = I3DXVector3(p.data[0] / p.data[3],
                                           p.data[1] / p.data[3],
@@ -223,10 +246,11 @@ export class I3DXDevice {
                                           r.data[2] / r.data[3]);
 
 
-                    const N = I3DXVectorUnit(I3DXVectorCross(
-                      I3DXMatrixSubtract(Q, P) as I3DXVec,
-                      I3DXMatrixSubtract(R, P) as I3DXVec,
-                    ));
+                    const QP = I3DXMatrixSubtract(Q, P) as I3DXVec;
+                    const RP = I3DXMatrixSubtract(R, P) as I3DXVec;
+                    const RQ = I3DXMatrixSubtract(R, Q) as I3DXVec;
+                    const PR = I3DXMatrixSubtract(P, R) as I3DXVec;
+                    const N = I3DXVectorUnit(I3DXVectorCross(QP, RP));
 
                     // the final parameter to the equation of the plane
                     const d = I3DXVectorDot(screenNormal, P);
@@ -253,43 +277,45 @@ export class I3DXDevice {
 
                     const [Pa] = unpack(list[i].color);
                     const PLab = ColorToLab(list[i].color);
-                    const [Qa] = unpack(list[i + 1].color);
-                    const QLab = ColorToLab(list[i + 1].color);
-                    const [Ra] = unpack(list[i + 2].color);
-                    const RLab = ColorToLab(list[i + 2].color);
+                    const [Qa] = unpack(list[j].color);
+                    const QLab = ColorToLab(list[j].color);
+                    const [Ra] = unpack(list[j].color);
+                    const RLab = ColorToLab(list[k].color);
 
                     // x and y here are literally pixel coordinates
                     for (let y = Tp; y <= Bp; y++) {
                         for (let x = Lp; x <= Rp; x++) {
-                            // Determine if this point within the square is within the triangle
-                            const pq = (y > ((Qsy - Psy) / (Qsx - Psx) * (x - Psx) + Psy));
-                            const pr = (y < ((Rsy - Psy) / (Rsx - Psx) * (x - Psx) + Psy));
-                            const qr = (y > ((Rsy - Qsy) / (Rsx - Qsx) * (x - Qsx) + Qsy));
+                            // convert x and y back to perspective space
+                            const px = 1 - x / this.HWIDTH;
+                            const py = 1 - y / this.HHEIGHT;
+                            const sOrigin = I3DXVector3(px, py, 0);
 
-                            // Point is on the right side of all 3 lines
-                            if (pq && pr && qr) {
-                                const [Wp, Wq, Wr] = I3DXBarycentricCoords(x, y, Psx, Psy, Qsx, Qsy, Rsx, Rsy);
+                            // Depth at intersection with plane of the triangle
+                            const z = (d - I3DXVectorDot(N, sOrigin)) / dN;
+                            const O = I3DXVector3(px, py, z);
 
-                                // convert x and y back to perspective space
-                                const px = 1 - x / this.HWIDTH;
-                                const py = 1 - y / this.HHEIGHT;
-                                const sOrigin = I3DXVector3(px, py, 0);
-                                const z = (d - I3DXVectorDot(N, sOrigin)) / dN;
-                                //const z = P.data[2] * Wp + Q.data[2] * Wq + R.data[2] * Wr;
-
-                                const L = PLab[0] * Wp + QLab[0] * Wq + RLab[0] * Wr;
-                                const a = PLab[1] * Wp + QLab[1] * Wq + RLab[1] * Wr;
-                                const b = PLab[2] * Wp + QLab[2] * Wq + RLab[2] * Wr;
-                                const [_, vr, vg, vb] = unpack(LabToColor(L, a, b));
-
-                                const c = pack(
-                                    Math.round(Pa * Wp + Qa * Wq + Ra * Wr),
-                                    vr,
-                                    vg,
-                                    vb,
-                                );
-                                this.ZBufferSet(x, y, c, z);
+                            if (!(
+                                I3DXVectorDot(I3DXVectorCross(QP, I3DXMatrixSubtract(O, P) as I3DXVec), N) >= 0 &&
+                                I3DXVectorDot(I3DXVectorCross(RQ, I3DXMatrixSubtract(O, Q) as I3DXVec), N) >= 0 &&
+                                I3DXVectorDot(I3DXVectorCross(PR, I3DXMatrixSubtract(O, R) as I3DXVec), N) >= 0
+                            )) {
+                                continue;
                             }
+
+                            const [Wp, Wq, Wr] = I3DXBarycentricCoords(x, y, Psx, Psy, Qsx, Qsy, Rsx, Rsy);
+
+                            const L = PLab[0] * Wp + QLab[0] * Wq + RLab[0] * Wr;
+                            const a = PLab[1] * Wp + QLab[1] * Wq + RLab[1] * Wr;
+                            const b = PLab[2] * Wp + QLab[2] * Wq + RLab[2] * Wr;
+                            const [_, vr, vg, vb] = unpack(LabToColor(L, a, b));
+
+                            const c = pack(
+                                Math.round(Pa * Wp + Qa * Wq + Ra * Wr),
+                                vr,
+                                vg,
+                                vb,
+                            );
+                            this.ZBufferSet(x, y, c, z);
                         }
                     }
                 }
