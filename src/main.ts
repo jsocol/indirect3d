@@ -1,4 +1,4 @@
-/* vim: ts=2 sts=2 sw=2: */
+/* vim: set ts=2 sts=2 sw=2: */
 import {
   I3DXVertex,
   I3DXMatrixIdentity,
@@ -107,6 +107,8 @@ import {
     new I3DXVertex(root2p2, 0, root2m2, darkyellow),
     new I3DXVertex(1, 1, 0, yellow),
   ];
+
+  const ringSize = I3DXMatrixMultiply(I3DXScaleMatrix(2, 1, 2), I3DXTranslateMatrix(0, -0.5, 0));
 
   const id = I3DXMatrixIdentity(4);
   const vUp = I3DXVector3(0, 1, 0);
@@ -229,7 +231,7 @@ import {
     i3d.SetTransform(I3DTS_WORLD, redTransform);
     i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftBack);
 
-    i3d.SetTransform(I3DTS_WORLD, I3DXScaleMatrix(2, 1, 2));
+    i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(I3DXRotateXMatrix(idx / 2), ringSize));
     i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, ring);
 
     const left = I3DXTranslateMatrix(0, 0, Math.sin(idx / 2));
