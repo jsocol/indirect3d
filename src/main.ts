@@ -45,6 +45,8 @@ import {
 
   const fovyInput = document.getElementById('fovy')! as HTMLInputElement;
 
+  const fpsMeter = document.getElementById('fps')! as HTMLSpanElement;
+
   const redDepthInput = document.getElementById('red-depth-input')! as HTMLInputElement;
   const blueDepthInput = document.getElementById('blue-depth-input')! as HTMLInputElement;
 
@@ -150,6 +152,7 @@ import {
   let dTheta = 0.005;
   let isPlaying = false;
   let lastFrameEnd: number;
+  let frameTime = 0;
   const keys: Record<string, boolean> = {
     'KeyW': false, // forward
     'KeyQ': false, // strafe left
@@ -160,7 +163,7 @@ import {
   };
   function play() {
     //console.time('frame');
-    const now = Date.now();
+    let now = Date.now();
     const dt = now - lastFrameEnd;
 
     i3d.BeginScene();
@@ -250,8 +253,13 @@ import {
     if (isPlaying) {
         requestAnimationFrame(play);
     }
+    frameTime += (now - lastFrameEnd - frameTime) / 20;
     lastFrameEnd = now;
   }
+
+  setInterval(() => {
+    fpsMeter.innerText = (1000 / frameTime).toFixed(1) + ' fps';
+  }, 500);
 
   window.addEventListener('keydown', function(e) {
     if (e.code in keys) {
