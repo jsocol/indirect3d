@@ -1,13 +1,13 @@
 import { Color } from './color';
 import {
+  Degrees,
   I3DXMatrix,
-  I3DXVector,
-  I3DXVectorUnit,
+  I3DXMatrixAdd,
   I3DXMatrixSubtract,
+  I3DXVector,
   I3DXVectorCross,
   I3DXVectorDot,
-  Degrees,
-  I3DXMatrixTranspose,
+  I3DXVectorUnit,
 } from './matrix';
 
 export class I3DXVertex {
@@ -37,6 +37,11 @@ export function I3DXMatrixLookAtLH(pEye: I3DXMatrix, pAt: I3DXMatrix, pUp: I3DXM
   ]);
 
   return matrix;
+}
+
+export function I3DXMatrixLookToLH(pEye: I3DXMatrix, pDir: I3DXMatrix, pUp: I3DXMatrix): I3DXMatrix {
+  const pAt = I3DXMatrixAdd(pEye, pDir);
+  return I3DXMatrixLookAtLH(pEye, pAt, pUp);
 }
 
 export function I3DXMatrixPerspectiveFovLH(fovy: Degrees, aspect: number, zn: number, zf: number): I3DXMatrix {

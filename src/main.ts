@@ -12,19 +12,13 @@ import {
   I3DTS_PROJECTION,
   I3DTS_WORLD,
   I3DXRotateYMatrix,
-  I3DXMatrixAdd,
   I3DXMatrixMultiply,
   I3DPT_TRIANGLELIST,
   I3DPT_LINELIST,
   I3DPT_LINESTRIP,
   ARGB,
-  I3DXMatrixSubtract,
-  I3DXMatrixOrthoLH,
   XRGB,
-  I3DXRotateXMatrix,
-  I3DXMatrixScale,
-  I3DXScaleMatrix,
-  I3DXVectorDot,
+  I3DXMatrixLookToLH,
 } from './indirect3d';
 
 (function main() {
@@ -35,6 +29,10 @@ import {
   const camYInput = document.getElementById('camera-y')! as HTMLInputElement;
   const camZInput = document.getElementById('camera-z')! as HTMLInputElement;
 
+  const dirXInput = document.getElementById('direction-x')! as HTMLInputElement;
+  const dirYInput = document.getElementById('direction-y')! as HTMLInputElement;
+  const dirZInput = document.getElementById('direction-z')! as HTMLInputElement;
+
   const fovyInput = document.getElementById('fovy')! as HTMLInputElement;
 
   const redDepthInput = document.getElementById('red-depth-input')! as HTMLInputElement;
@@ -42,16 +40,14 @@ import {
 
   const fixedTriangle = [
     new I3DXVertex(2.5, -3.0, 1.0, ARGB(0xff,0,0,0xff)),
-    new I3DXVertex(0.0, 3.0, 1.0, ARGB(0xff,0,0xff,0)),
     new I3DXVertex(-2.5, -3.0, 1.0, ARGB(0xff,0xff,0,0)),
+    new I3DXVertex(0.0, 3.0, 1.0, ARGB(0xff,0,0xff,0)),
     new I3DXVertex(2.5, -3.0, 1.0, ARGB(0xff,0,0,0xff)),
-    //new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff))
   ];
   const movingTriangle = [
     new I3DXVertex(2.5, -3.0, 0, ARGB(0x40,0,0,0xff)),
     new I3DXVertex(0.0, 3.0, 0, ARGB(0x40,0,0,0xff)),
     new I3DXVertex(-2.5, -3.0, 0, ARGB(0x40,0,0,0xff)),
-    //new I3DXVertex(2.5, -3.0, 0.0, ARGB(0x80,0,0,0xff))
   ];
 
 
@@ -70,9 +66,9 @@ import {
     ];
 
 
-    const matView = I3DXMatrixLookAtLH(
+    const matView = I3DXMatrixLookToLH(
       I3DXVector3(camXInput.valueAsNumber, camYInput.valueAsNumber, camZInput.valueAsNumber), // the camera position
-      I3DXVector3(0, 0, 0), // the "look-at" position
+      I3DXVector3(dirXInput.valueAsNumber, dirYInput.valueAsNumber, dirZInput.valueAsNumber), // the "look-to" direction
       I3DXVector3(0, 1, 0), // the "up" direction
     );
     const matProj = I3DXMatrixPerspectiveFovLH(
@@ -96,9 +92,9 @@ import {
         //console.time('frame');
         i3d.BeginScene();
 
-        const matView = I3DXMatrixLookAtLH(
+        const matView = I3DXMatrixLookToLH(
           I3DXVector3(camXInput.valueAsNumber, camYInput.valueAsNumber, camZInput.valueAsNumber), // the camera position
-          I3DXVector3(0, 0, 0), // the "look-at" position
+          I3DXVector3(dirXInput.valueAsNumber, dirYInput.valueAsNumber, dirZInput.valueAsNumber), // the "look-to" direction
           I3DXVector3(0, 1, 0), // the "up" direction
         );
         const matProj = I3DXMatrixPerspectiveFovLH(
@@ -161,7 +157,18 @@ import {
     }, true);
     console.log("Construct scene", new Date());
     i3d.BeginScene();
-    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
+    //i3d.DrawPrimitive(I3DPT_TRIANGLELIST, fixedTriangle);
+
+    const blueDepth = blueDepthInput.valueAsNumber;
+    const blueTransform = I3DXTranslateMatrix(-9, 2, blueDepth);
+    i3d.SetTransform(I3DTS_WORLD, blueTransform);
+    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftFront);
+
+    const redDepth = redDepthInput.valueAsNumber;
+    const redTransform = I3DXTranslateMatrix(-9, 2, redDepth);
+    i3d.SetTransform(I3DTS_WORLD, redTransform);
+    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftBack);
+
     i3d.EndScene();
     i3d.Present();
     console.log("End Construct scene", new Date());

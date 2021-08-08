@@ -5,7 +5,7 @@ export declare type BlueChannel = number;
 export declare type Color = number;
 export declare function XRGB(r: RedChannel, g: GreenChanenl, b: BlueChannel): Color;
 export declare function ARGB(a: AlphaChannel, r: RedChannel, g: GreenChanenl, b: BlueChannel): Color;
-export declare function I3DXAlphaBlend(bg: Color, src: Color): Color;
+export declare function I3DXAlphaBlend(bg: Color, fg: Color): Color;
 export declare function ColorToLab(color: Color): [number, number, number];
 export declare function LabToColor(L: number, a: number, b: number): Color;
 export declare function RGBToXYZ(r: number, g: number, b: number): [number, number, number];

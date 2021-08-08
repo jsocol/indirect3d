@@ -14,27 +14,27 @@ export function ARGB(a: AlphaChannel, r: RedChannel, g: GreenChanenl, b: BlueCha
     return pack(a, r, g, b);
 }
 
-export function I3DXAlphaBlend(bg: Color, src: Color): Color {
-    const sa = src >>> 24;
-    const ba = bg >>> 24;
+export function I3DXAlphaBlend(bg: Color, fg: Color): Color {
+    let [a0, r0, g0, b0] = unpack(bg);
+    let [a1, r1, g1, b1] = unpack(fg);
 
     // src is transparent.
-    if ( sa == 0 ) {
-        return bg;
+    if ( a1 === 0 ) {
+      return bg;
     }
 
     // bg is transparent.
-    if ( ba == 0 )
-        return src;
+    if ( a0 === 0 ) {
+      return fg;
+    }
 
-    let [a0, r0, g0, b0] = unpack(bg);
-    let [a1, r1, g1, b1] = unpack(src);
     a0 = a0/255;
     a1 = a1/255;
-    let a = a0 + a1 - a0 * a1;
-    const r = Math.round((r0 * a0 + r1 * (1 - a0) * a1)/a);
-    const g = Math.round((g0 * a0 + g1 * (1 - a0) * a1)/a);
-    const b = Math.round((b0 * a0 + b1 * (1 - a0) * a1)/a);
+    //let a = a0 + a1 *() a0 * a1;
+    let a = a1 + a0 * (1 - a1);
+    const r = Math.round((r1 * a1 + r0 * a0 * (1 - a1))/a);
+    const g = Math.round((g1 * a1 + g0 * a0 * (1 - a1))/a);
+    const b = Math.round((b1 * a1 + b0 * a0 * (1 - a1))/a);
     a = Math.min(255, Math.round(a * 255));
     return pack(a, r, g, b);
 }

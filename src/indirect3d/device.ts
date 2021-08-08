@@ -8,6 +8,8 @@ import {
     I3DXToRadian,
     I3DXVector3,
     I3DXVectorCross,
+    I3DXVectorDot,
+    I3DXVectorUnit,
 } from './matrix';
 import {
     I3DXBarycentricCoords,
@@ -99,6 +101,8 @@ export class I3DXDevice {
         let transform: I3DXMatrix;
         transform = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
         transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transform);
+
+        const screenNormal = I3DXVector3(0, 0, 1);
 
         switch(mode) {
             case I3DPT_POINTLIST:
@@ -217,8 +221,20 @@ export class I3DXDevice {
                                           r.data[1] / r.data[3],
                                           r.data[2] / r.data[3]);
 
-                    const N = I3DXVectorCross(I3DXMatrixSubtract(Q, P),
-                                              I3DXMatrixSubtract(R, P));
+
+                    const N = I3DXVectorUnit(I3DXVectorCross(
+                      I3DXMatrixSubtract(Q, P),
+                      I3DXMatrixSubtract(R, P)
+                    ));
+
+                    // the final parameter to the equation of the plane
+                    const d = I3DXVectorDot(screenNormal, P);
+
+                    const dN = I3DXVectorDot(N, screenNormal);
+                    // if dN === 0, the triangle _should_ be parallel to the ray
+                    if (dN <= 0) {
+                      continue;
+                    }
 
                     // Scaled coordinates
                     const Psx = Math.round((1 - P.data[0]) * this.HWIDTH);
@@ -229,23 +245,21 @@ export class I3DXDevice {
                     const Rsy = Math.round((1 - R.data[1]) * this.HHEIGHT);
 
                     // Corners of a boundins square
-                    const Tp = Math.min(Psy, Qsy, Rsy);
-                    const Bp = Math.max(Psy, Qsy, Rsy);
-                    const Lp = Math.min(Psx, Qsx, Rsx);
-                    const Rp = Math.max(Psx, Qsx, Rsx);
+                    const Tp = Math.max(Math.min(Psy, Qsy, Rsy), 0);
+                    const Bp = Math.min(Math.max(Psy, Qsy, Rsy), this.HEIGHT);
+                    const Lp = Math.max(Math.min(Psx, Qsx, Rsx), 0);
+                    const Rp = Math.min(Math.max(Psx, Qsx, Rsx), this.WIDTH);
 
-                    const dx = Bp - Tp; // vertical span
-                    const dy = Rp - Lp; // horizontal span
-
-                    const [Pa, Pr, Pg, Pb] = unpack(list[i].color);
+                    const [Pa] = unpack(list[i].color);
                     const PLab = ColorToLab(list[i].color);
-                    const [Qa, Qr, Qg, Qb] = unpack(list[i + 1].color);
+                    const [Qa] = unpack(list[i + 1].color);
                     const QLab = ColorToLab(list[i + 1].color);
-                    const [Ra, Rr, Rg, Rb] = unpack(list[i + 2].color);
+                    const [Ra] = unpack(list[i + 2].color);
                     const RLab = ColorToLab(list[i + 2].color);
 
-                    for (let y = Tp; y <= Bp && y <= this.HEIGHT; y++) {
-                        for (let x = Lp; x <= Rp && x <= this.WIDTH; x++) {
+                    // x and y here are literally pixel coordinates
+                    for (let y = Tp; y <= Bp; y++) {
+                        for (let x = Lp; x <= Rp; x++) {
                             // Determine if this point within the square is within the triangle
                             const pq = (y > ((Qsy - Psy) / (Qsx - Psx) * (x - Psx) + Psy));
                             const pr = (y < ((Rsy - Psy) / (Rsx - Psx) * (x - Psx) + Psy));
@@ -254,19 +268,21 @@ export class I3DXDevice {
                             // Point is on the right side of all 3 lines
                             if (pq && pr && qr) {
                                 const [Wp, Wq, Wr] = I3DXBarycentricCoords(x, y, Psx, Psy, Qsx, Qsy, Rsx, Rsy);
-                                const z = P.data[2] * Wp + Q.data[2] * Wq + R.data[2] * Wr;
+
+                                // convert x and y back to perspective space
+                                const px = 1 - x / this.HWIDTH;
+                                const py = 1 - y / this.HHEIGHT;
+                                const sOrigin = I3DXVector3(px, py, 0);
+                                const z = (d - I3DXVectorDot(N, sOrigin)) / dN;
+                                //const z = P.data[2] * Wp + Q.data[2] * Wq + R.data[2] * Wr;
 
                                 const L = PLab[0] * Wp + QLab[0] * Wq + RLab[0] * Wr;
                                 const a = PLab[1] * Wp + QLab[1] * Wq + RLab[1] * Wr;
                                 const b = PLab[2] * Wp + QLab[2] * Wq + RLab[2] * Wr;
                                 const [_, vr, vg, vb] = unpack(LabToColor(L, a, b));
-                                // console.log('Lab', [L, a, b]);
 
                                 const c = pack(
-                                    Pa * Wp + Qa * Wq + Ra * Wr,
-                                    /*Pr * Wp + Qr * Wq + Rr * Wr,
-                                    Pg * Wp + Qg * Wq + Rg * Wr,
-                                    Pb * Wp + Qb * Wq + Rb * Wr,*/
+                                    Math.round(Pa * Wp + Qa * Wq + Ra * Wr),
                                     vr,
                                     vg,
                                     vb,
@@ -296,27 +312,32 @@ export class I3DXDevice {
     }
 
     protected ZBufferSet(x: number, y: number, color: Color, depth: number) {
+        //console.log(`setting ${x},${y},${depth} to ${unpack(color)}`);
         const idx = this.WIDTH * (y - 1) + x;
         const zdepth = this._zbufferDepth[idx];
         const zcolor = this._zbufferData[idx];
-        depth = depth - 1; // Why this?
 
         // Current pixel is solid and closer
         const [za] = unpack(zcolor);
-        if (za >= 100 && zdepth < depth) {
+        if (za >= 255 && zdepth < depth) {
             return;
         }
 
         // New pixel is solid, or no current color
         const [a] = unpack(color);
-        if (a >= 100 || za === 0) {
+
+        if ((a >= 255 && depth < zdepth) || za === 0) {
             this._zbufferData[idx] = color;
             this._zbufferDepth[idx] = depth;
             return;
         }
 
         // Nothing solid, blend 'em
-        this._zbufferData[idx] = I3DXAlphaBlend(zcolor, color);
+        if (depth > zdepth) {
+          this._zbufferData[idx] = I3DXAlphaBlend(color, zcolor);
+        } else {
+          this._zbufferData[idx] = I3DXAlphaBlend(zcolor, color);
+        }
 
         // Which is closer
         if (depth < zdepth) {
