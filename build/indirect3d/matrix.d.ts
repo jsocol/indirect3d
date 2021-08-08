@@ -23,10 +23,21 @@ export declare function I3DXMatrixMultiply(A: I3DXMatrix, B: I3DXMatrix): I3DXMa
 export declare function I3DXMatrixAdd(A: I3DXMatrix, B: I3DXMatrix): I3DXMatrix;
 export declare function I3DXMatrixSubtract(A: I3DXMatrix, B: I3DXMatrix): I3DXMatrix;
 export declare function I3DXMatrixScale(A: I3DXMatrix, s: number): I3DXMatrix;
-export declare function I3DXVector(m: number, data?: number[]): I3DXMatrix;
-export declare function I3DXVector3(x: number, y: number, z: number): I3DXMatrix;
-export declare function I3DXVectorCross(a: I3DXMatrix, b: I3DXMatrix): I3DXMatrix;
-export declare function I3DXVectorDot(a: I3DXMatrix, b: I3DXMatrix): number;
-export declare function I3DXVectorLength(a: I3DXMatrix): number;
-export declare function I3DXVectorUnit(a: I3DXMatrix): I3DXMatrix;
+export declare class I3DXVec extends I3DXMatrix {
+    constructor(rows: number, cols: number, data?: number[]);
+    get x(): number;
+    set x(value: number);
+    get y(): number;
+    set y(value: number);
+    get z(): number;
+    set z(value: number);
+    get w(): number;
+    set w(value: number);
+}
+export declare function I3DXVector(m: number, data?: number[]): I3DXVec;
+export declare function I3DXVector3(x: number, y: number, z: number): I3DXVec;
+export declare function I3DXVectorCross(a: I3DXVec, b: I3DXVec): I3DXVec;
+export declare function I3DXVectorDot(a: I3DXVec, b: I3DXVec): number;
+export declare function I3DXVectorLength(a: I3DXVec): number;
+export declare function I3DXVectorUnit(a: I3DXVec): I3DXVec;
 //# sourceMappingURL=matrix.d.ts.map

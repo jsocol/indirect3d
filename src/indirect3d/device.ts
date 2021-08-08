@@ -6,6 +6,7 @@ import {
     I3DXMatrixMultiply,
     I3DXMatrixSubtract,
     I3DXToRadian,
+    I3DXVec,
     I3DXVector3,
     I3DXVectorCross,
     I3DXVectorDot,
@@ -223,8 +224,8 @@ export class I3DXDevice {
 
 
                     const N = I3DXVectorUnit(I3DXVectorCross(
-                      I3DXMatrixSubtract(Q, P),
-                      I3DXMatrixSubtract(R, P)
+                      I3DXMatrixSubtract(Q, P) as I3DXVec,
+                      I3DXMatrixSubtract(R, P) as I3DXVec,
                     ));
 
                     // the final parameter to the equation of the plane

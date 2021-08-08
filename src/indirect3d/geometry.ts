@@ -4,6 +4,7 @@ import {
   I3DXMatrix,
   I3DXMatrixAdd,
   I3DXMatrixSubtract,
+  I3DXVec,
   I3DXVector,
   I3DXVectorCross,
   I3DXVectorDot,
@@ -11,7 +12,7 @@ import {
 } from './matrix';
 
 export class I3DXVertex {
-  coordinates: I3DXMatrix
+  coordinates: I3DXVec
   color: Color
 
   constructor(x: number, y: number, z: number, color: Color) {
@@ -21,13 +22,15 @@ export class I3DXVertex {
   }
 }
 
-export function I3DXMatrixLookAtLH(pEye: I3DXMatrix, pAt: I3DXMatrix, pUp: I3DXMatrix): I3DXMatrix {
-  const zaxis = I3DXVectorUnit(I3DXMatrixSubtract(pAt, pEye));
+export function I3DXMatrixLookAtLH(pEye: I3DXVec, pAt: I3DXVec, pUp: I3DXVec): I3DXMatrix {
+  const zaxis = I3DXVectorUnit(I3DXMatrixSubtract(pAt, pEye) as I3DXVec);
   const xaxis = I3DXVectorUnit(I3DXVectorCross(pUp, zaxis));
   const yaxis = I3DXVectorCross(zaxis, xaxis);
   const xdot = I3DXVectorDot(xaxis, pEye);
   const ydot = I3DXVectorDot(yaxis, pEye);
   const zdot = I3DXVectorDot(zaxis, pEye);
+
+  // console.log('Vectors again!', xaxis.data, xaxis.x, xaxis.y, xaxis.z);
 
   const matrix = new I3DXMatrix(4, 4, [
     xaxis.data[0], xaxis.data[1], xaxis.data[2], -xdot,
@@ -39,8 +42,8 @@ export function I3DXMatrixLookAtLH(pEye: I3DXMatrix, pAt: I3DXMatrix, pUp: I3DXM
   return matrix;
 }
 
-export function I3DXMatrixLookToLH(pEye: I3DXMatrix, pDir: I3DXMatrix, pUp: I3DXMatrix): I3DXMatrix {
-  const pAt = I3DXMatrixAdd(pEye, pDir);
+export function I3DXMatrixLookToLH(pEye: I3DXVec, pDir: I3DXVec, pUp: I3DXVec): I3DXMatrix {
+  const pAt = I3DXMatrixAdd(pEye, pDir) as I3DXVec;
   return I3DXMatrixLookAtLH(pEye, pAt, pUp);
 }
 

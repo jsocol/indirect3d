@@ -210,25 +210,63 @@ export function I3DXMatrixScale(A: I3DXMatrix, s: number): I3DXMatrix {
     return B;
 }
 
-export function I3DXVector(m: number, data?: number[]): I3DXMatrix {
-    return new I3DXMatrix(m, 1, data);
+export class I3DXVec extends I3DXMatrix {
+    constructor(rows: number, cols: number, data?: number[]) {
+        super(rows, cols, data);
+    }
+
+    get x(): number {
+        return this.data[0];
+    }
+
+    set x(value: number) {
+        this.data[0] = value;
+    }
+
+    get y(): number {
+        return this.data[1];
+    }
+
+    set y(value: number) {
+        this.data[1] = value;
+    }
+
+    get z(): number {
+        return this.data[2];
+    }
+
+    set z(value: number) {
+        this.data[2] = value;
+    }
+
+    get w(): number {
+        return this.data[3];
+    }
+
+    set w(value: number) {
+        this.data[3] = value;
+    }
 }
 
-export function I3DXVector3(x: number, y: number, z: number): I3DXMatrix {
+export function I3DXVector(m: number, data?: number[]): I3DXVec {
+    return new I3DXVec(m, 1, data);
+}
+
+export function I3DXVector3(x: number, y: number, z: number): I3DXVec {
     const v = I3DXVector(3, [x, y, z]);
     return v;
 }
 
-export function I3DXVectorCross(a: I3DXMatrix, b: I3DXMatrix): I3DXMatrix {
+export function I3DXVectorCross(a: I3DXVec, b: I3DXVec): I3DXVec {
     const c = I3DXVector(3);
-    c.data[0] = a.data[1]*b.data[2] - a.data[2]*b.data[1];
-    c.data[1] = a.data[2]*b.data[0] - a.data[0]*b.data[2];
-    c.data[2] = a.data[0]*b.data[1] - a.data[1]*b.data[0];
+    c.x = a.data[1]*b.data[2] - a.data[2]*b.data[1];
+    c.y = a.data[2]*b.data[0] - a.data[0]*b.data[2];
+    c.z = a.data[0]*b.data[1] - a.data[1]*b.data[0];
     return c;
 }
 
-export function I3DXVectorDot(a: I3DXMatrix, b: I3DXMatrix): number {
-    if (a.rows != b.rows || a.cols != b.cols) {
+export function I3DXVectorDot(a: I3DXVec, b: I3DXVec): number {
+    if (a.rows !== b.rows || a.cols !== b.cols) {
         throw new Error("Vectors must be the same size!");
     }
     let total = 0;
@@ -239,10 +277,10 @@ export function I3DXVectorDot(a: I3DXMatrix, b: I3DXMatrix): number {
     return total;
 }
 
-export function I3DXVectorLength(a: I3DXMatrix): number {
+export function I3DXVectorLength(a: I3DXVec): number {
     return Math.sqrt(I3DXVectorDot(a, a));
 }
 
-export function I3DXVectorUnit(a: I3DXMatrix): I3DXMatrix {
-    return I3DXMatrixScale(a, 1 / I3DXVectorLength(a));
+export function I3DXVectorUnit(a: I3DXVec): I3DXVec {
+    return I3DXMatrixScale(a, 1 / I3DXVectorLength(a)) as I3DXVec;
 }

@@ -24,6 +24,7 @@ import {
   I3DXMatrixAdd,
   I3DXVector,
   I3DXVectorCross,
+  I3DXVec,
 } from './indirect3d';
 
 (function main() {
@@ -115,10 +116,10 @@ import {
     facing = I3DXVectorUnit(I3DXVector(4, [dirXInput.valueAsNumber, dirYInput.valueAsNumber, dirZInput.valueAsNumber, 1]));
     if (keys['KeyA']) {
       const rotate = I3DXRotateYMatrix(dTheta * dt);
-      facing = I3DXMatrixMultiply(rotate, facing);
+      facing = I3DXMatrixMultiply(rotate, facing) as I3DXVec;
     } else if (keys['KeyD']) {
       const rotate = I3DXRotateYMatrix(-dTheta * dt);
-      facing = I3DXMatrixMultiply(rotate, facing);
+      facing = I3DXMatrixMultiply(rotate, facing) as I3DXVec;
     }
 
     dirXInput.valueAsNumber = facing.data[0];
