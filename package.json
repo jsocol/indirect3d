@@ -4,7 +4,9 @@
   "description": "A weird thing to play with 3d graphics",
   "main": "main.js",
   "scripts": {
-    "test": "mocha --require ts-node/register test/*.ts"
+    "build": "webpack build --mode=production",
+    "test": "mocha --require ts-node/register test/*.ts",
+    "watch": "webpack watch --mode=development"
   },
   "repository": {
     "type": "git",
