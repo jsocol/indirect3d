@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack build --mode=production",
     "test": "mocha --require ts-node/register test/*.ts",
-    "watch": "webpack watch --mode=development"
+    "watch": "webpack watch --mode=production"
   },
   "repository": {
     "type": "git",

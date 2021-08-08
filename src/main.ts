@@ -65,8 +65,8 @@ import {
     new I3DXVertex(-1, 0, 0, XRGB(0xff, 0x40, 0x40)),
   ];
 
-  const yellow = XRGB(0xff, 0xff, 0x00);
-  const darkyellow = XRGB(0xc0, 0x8f, 0x40);
+  const yellow = ARGB(0x80, 0xff, 0xff, 0x00);
+  const darkyellow = ARGB(0x80, 0xc0, 0x8f, 0x40);
   const root2o2 = Math.sqrt(2) / 2;
   const root2m2 = Math.sqrt(2 - Math.sqrt(2)) / 2;
   const root2p2 = Math.sqrt(2 + Math.sqrt(2)) / 2;
