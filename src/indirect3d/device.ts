@@ -302,7 +302,7 @@ export class I3DXDevice {
                                 continue;
                             }
 
-                            const [Wp, Wq, Wr] = I3DXBarycentricCoords(x, y, Psx, Psy, Qsx, Qsy, Rsx, Rsy);
+                            const [Wp, Wq, Wr] = I3DXBarycentricCoords(px, py, P.x, P.y, Q.x, Q.y, R.x, R.y);
 
                             const L = PLab[0] * Wp + QLab[0] * Wq + RLab[0] * Wr;
                             const a = PLab[1] * Wp + QLab[1] * Wq + RLab[1] * Wr;
