@@ -3,7 +3,6 @@ import {
   I3DXVertex,
   I3DXMatrixIdentity,
   I3DXTranslateMatrix,
-  I3DXMatrixLookAtLH,
   I3DXVector3,
   I3DXMatrixPerspectiveFovLH,
   I3DXToRadian,
@@ -30,6 +29,7 @@ import {
   I3DXRotateXMatrix,
   I3DXScaleMatrix,
 } from './indirect3d';
+import {I3DLight, I3DLightType} from './indirect3d/lights';
 
 (function main() {
   const WIDTH = 640, HEIGHT = 480;
@@ -65,8 +65,9 @@ import {
     new I3DXVertex(-1, 0, 0, XRGB(0xff, 0x40, 0x40)),
   ];
 
-  const yellow = ARGB(0x80, 0xff, 0xff, 0x00);
-  const darkyellow = ARGB(0x80, 0xc0, 0x8f, 0x40);
+  const yellow = ARGB(0xff, 0xff, 0xff, 0xff);
+  const darkyellow = ARGB(0xff, 0xff, 0xff, 0xff);
+  // const darkyellow = ARGB(0x80, 0xc0, 0x8f, 0x40);
   const root2o2 = Math.sqrt(2) / 2;
   const root2m2 = Math.sqrt(2 - Math.sqrt(2)) / 2;
   const root2p2 = Math.sqrt(2 + Math.sqrt(2)) / 2;
@@ -117,14 +118,14 @@ import {
 
   const triLeftFront = [
     new I3DXVertex(0, 0, 0, ARGB(0x80, 0, 0, 0xff)),
-    new I3DXVertex(3, 3, 0, ARGB(0x80, 0, 0, 0xff)),
-    new I3DXVertex(6, 0, 0, ARGB(0x80, 0, 0, 0xff)),
+    new I3DXVertex(1, 1, 0, ARGB(0x80, 0, 0, 0xff)),
+    new I3DXVertex(2, 0, 0, ARGB(0x80, 0, 0, 0xff)),
   ];
 
   const triLeftBack = [
     new I3DXVertex(0, 0, 0, XRGB(0xff, 0, 0)),
-    new I3DXVertex(3, 3, 0, XRGB(0xff, 0, 0)),
-    new I3DXVertex(6, 0, 0, XRGB(0xff, 0, 0)),
+    new I3DXVertex(1, 1, 0, XRGB(0xff, 0, 0)),
+    new I3DXVertex(2, 0, 0, XRGB(0xff, 0, 0)),
   ];
 
   let facing = I3DXVector(4, [0, 0, -1, 0]);
@@ -143,9 +144,37 @@ import {
 
   const i3d = new I3DXDevice(container, WIDTH, HEIGHT);
 
+  i3d.SetAmbientLight(XRGB(0.1, 0.1, 0.1));
+
   i3d.SetTransform(I3DTS_VIEW, matView);
   i3d.SetTransform(I3DTS_PROJECTION, matProj);
   i3d.SetTransform(I3DTS_WORLD, id);
+
+  const basicLight = new I3DLight(I3DLightType.Point);
+  basicLight.diffuse = {
+    a: 0.0,
+    r: 0.15,
+    g: 0.0,
+    b: 0.5,
+  };
+  basicLight.position = I3DXVector(4, [-8, 5, 15, 1]);
+  basicLight.atten0 = 0;
+  basicLight.atten1 = 0.01;
+  basicLight.atten2 = 0.001;
+  i3d.SetLight(0, basicLight);
+
+  const keyLight = new I3DLight(I3DLightType.Point);
+  keyLight.diffuse = {
+    a: 0.0,
+    r: 0.5,
+    g: 0.7,
+    b: 0.2,
+  };
+  keyLight.position = I3DXVector(4, [1, 3, -15, 1]);
+  keyLight.atten0 = 0;
+  keyLight.atten1 = 0.1;
+  keyLight.atten2 = 0.001;
+  i3d.SetLight(1, keyLight);
 
   let idx = 0;
   let dPosition = 0.2;
@@ -234,7 +263,7 @@ import {
     i3d.SetTransform(I3DTS_WORLD, redTransform);
     i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftBack);
 
-    i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(I3DXRotateXMatrix(idx / 2), ringSize));
+    i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(I3DXRotateXMatrix(idx / 3), ringSize));
     i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, ring);
 
     const left = I3DXTranslateMatrix(0, 0, Math.sin(idx / 2));
@@ -242,7 +271,8 @@ import {
     i3d.SetTransform(I3DTS_WORLD, left);
     i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, fixedTriangle);
 
-    i3d.SetTransform(I3DTS_WORLD, I3DXTranslateMatrix(8, 0, 0));
+    i3d.SetTransform(I3DTS_WORLD, I3DXRotateYMatrix(idx / 3));
+    i3d.MultiplyTransform(I3DTS_WORLD, I3DXTranslateMatrix(8, 0, 0));
     i3d.DrawPrimitive(I3DPT_TRIANGLEFAN, pyramid);
 
     i3d.EndScene();

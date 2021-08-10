@@ -6,17 +6,34 @@ export type GreenChanenl = number;
 export type BlueChannel = number;
 export type Color = number;
 
-export function XRGB(r: RedChannel, g: GreenChanenl, b: BlueChannel): Color {
-    return pack(255, r, g, b);
+export interface I3DColor {
+    r: number
+    g: number
+    b: number
+    a: number
 }
 
-export function ARGB(a: AlphaChannel, r: RedChannel, g: GreenChanenl, b: BlueChannel): Color {
-    return pack(a, r, g, b);
+export function XRGB(r: RedChannel, g: GreenChanenl, b: BlueChannel): I3DColor {
+    return {
+        a: 255,
+        r,
+        g,
+        b,
+    };
+}
+
+export function ARGB(a: AlphaChannel, r: RedChannel, g: GreenChanenl, b: BlueChannel): I3DColor {
+    return {
+        a,
+        r,
+        g,
+        b,
+    };
 }
 
 export function I3DXAlphaBlend(bg: Color, fg: Color): Color {
-    let [a0, r0, g0, b0] = unpack(bg);
-    let [a1, r1, g1, b1] = unpack(fg);
+    let { a: a0, r: r0, g: g0, b: b0 } = unpack(bg);
+    let { a: a1, r: r1, g: g1, b: b1 } = unpack(fg);
 
     // src is transparent.
     if ( a1 === 0 ) {
@@ -39,13 +56,13 @@ export function I3DXAlphaBlend(bg: Color, fg: Color): Color {
     return pack(a, r, g, b);
 }
 
-export function ColorToLab(color: Color): [number, number, number] {
-    const [_, r, g, b] = unpack(color);
+export function ColorToLab(color: I3DColor): [number, number, number] {
+    const { r, g, b } = color;
     const [X, Y, Z] = RGBToXYZ(r, g, b);
     return XYZToLab(X, Y, Z);
 }
 
-export function LabToColor(L: number, a: number, b: number): Color {
+export function LabToColor(L: number, a: number, b: number): I3DColor {
     const [X, Y, Z] = LabToXYZ(L, a, b);
     const [rc, gc, bc] = XYZToRGB(X, Y, Z);
     return XRGB(rc, gc, bc);

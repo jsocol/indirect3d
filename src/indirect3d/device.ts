@@ -1,15 +1,17 @@
 import { pack, unpack } from './utils';
-import { Color, ColorToLab, I3DXAlphaBlend, LabToColor } from './color';
+import { Color, ColorToLab, I3DXAlphaBlend, LabToColor, I3DColor, XRGB } from './color';
 import {
     I3DXMatrix,
     I3DXMatrixIdentity,
     I3DXMatrixMultiply,
+    I3DXMatrixScale,
     I3DXMatrixSubtract,
     I3DXToRadian,
     I3DXVec,
     I3DXVector3,
     I3DXVectorCross,
     I3DXVectorDot,
+    I3DXVectorLength,
     I3DXVectorUnit,
 } from './matrix';
 import {
@@ -18,6 +20,9 @@ import {
     I3DXMatrixPerspectiveFovLH,
     I3DXVertex,
 } from './geometry';
+import {I3DLight, I3DLightType} from './lights';
+
+const WHITE = XRGB(0xff, 0xff, 0xff);
 
 export const I3DTS_WORLD = 'world';
 export const I3DTS_VIEW = 'view';
@@ -51,6 +56,13 @@ export class I3DXDevice {
     protected _transforms: {[K in I3DXTransformType]: I3DXMatrix}
     protected _zbufferData: Int32Array
     protected _zbufferDepth: Float32Array
+    protected _ambientLight: I3DColor = {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 0.0,
+    };
+    protected _lights: I3DLight[] = [];
 
     constructor(container: HTMLElement, WIDTH: number, HEIGHT: number) {
         this.WIDTH = WIDTH;
@@ -85,6 +97,18 @@ export class I3DXDevice {
         this._zbufferDepth = new Float32Array(bufferLength)
     }
 
+    SetAmbientLight(color: I3DColor) {
+        this._ambientLight = color;
+    }
+
+    SetLight(index: number, light: I3DLight) {
+        this._lights[index] = light;
+    }
+
+    GetLight(index: number): I3DLight | undefined {
+        return this._lights[index];
+    }
+
     SetTransform(type: I3DXTransformType, matrix: I3DXMatrix) {
         this._transforms[type] = matrix;
     }
@@ -99,11 +123,15 @@ export class I3DXDevice {
     }
 
     DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]) {
-        let transform: I3DXMatrix;
-        transform = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
-        transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transform);
+        const transformCamera = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
+        const transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transformCamera);
 
         const screenNormal = I3DXVector3(0, 0, 1);
+
+        const lightPositions = this._lights.filter((light) => light.type === I3DLightType.Point).map((light) => ({
+            light: light,
+            pos: I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], light.position!),
+        }));
 
         switch(mode) {
             case I3DPT_POINTLIST:
@@ -120,7 +148,11 @@ export class I3DXDevice {
                     ) {
                         const sx = Math.round((1 - bx) * this.HWIDTH);
                         const sy = Math.round((1 - by) * this.HHEIGHT);
-                        this.ZBufferSet(sx, sy, list[i].color, bz);
+                        let { a, r, g, b } = list[i].color;
+                        r = r * this._ambientLight.r;
+                        g = g * this._ambientLight.g;
+                        b = b * this._ambientLight.b;
+                        this.ZBufferSet(sx, sy, pack(a, r, g, b), bz);
                     }
                 }
                 break;
@@ -146,8 +178,8 @@ export class I3DXDevice {
                     // Given a distance from 0 to 1 along a line segment
                     // between point f0 and point f1, return the appropriate
                     // color.
-                    const [a0, r0, g0, b0] = unpack(list[i].color);
-                    const [a1, r1, g1, b1] = unpack(list[i+1].color);
+                    const { a: a0, r: r0, g: g0, b: b0 } = list[i].color;
+                    const { a: a1, r: r1, g: g1, b: b1 } = list[i+1].color;
                     const da = a1 - a0;
                     const dr = r1 - r0;
                     const dg = g1 - g0;
@@ -180,13 +212,10 @@ export class I3DXDevice {
                     const sx0 = Math.round((1 - bx0) * this.HWIDTH);
                     const sx1 = Math.round((1 - bx1) * this.HWIDTH);
                     const dsx = Math.abs(sx1 - sx0);
-                    // console.log(`screen x length: ${sx1} - ${sx0} = ${dsx}`);
 
                     for (let j = 0; j <= dsx; j++) {
                         const dist = j / dsx;
-                        //console.log('line dist:', dist);
                         const [x, y, z] = pos(dist);
-                        //console.log('xyz', [x, y, z]);
                         const c = color(dist);
 
                         if (
@@ -196,7 +225,6 @@ export class I3DXDevice {
                         ) {
                             const sx = Math.round((1 - x) * this.HWIDTH);
                             const sy = Math.round((1 - y) * this.HHEIGHT);
-                            // console.log(`screen coords ${[sx, sy]}`);
                             this.ZBufferSet(sx, sy, c, z);
                         }
                     }
@@ -231,9 +259,21 @@ export class I3DXDevice {
                         k = m + 2;
                         m++;
                     }
-                    const p = I3DXMatrixMultiply(transform, list[i].coordinates);
-                    const q = I3DXMatrixMultiply(transform, list[j].coordinates);
-                    const r = I3DXMatrixMultiply(transform, list[k].coordinates);
+                    const pCam = I3DXMatrixMultiply(transformCamera, list[i].coordinates);
+                    const qCam = I3DXMatrixMultiply(transformCamera, list[j].coordinates);
+                    const rCam = I3DXMatrixMultiply(transformCamera, list[k].coordinates);
+                    const nCam = I3DXVectorUnit(I3DXVectorCross(
+                        I3DXMatrixSubtract(qCam, pCam) as I3DXVec,
+                        I3DXMatrixSubtract(rCam, pCam) as I3DXVec,
+                    ));
+
+                    const pColor = list[i].color;
+                    const qColor = list[j].color;
+                    const rColor = list[k].color;
+
+                    const p = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], pCam);
+                    const q = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], qCam);
+                    const r = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], rCam);
 
                     const P = I3DXVector3(p.data[0] / p.data[3],
                                           p.data[1] / p.data[3],
@@ -275,12 +315,98 @@ export class I3DXDevice {
                     const Lp = Math.max(Math.min(Psx, Qsx, Rsx), 0);
                     const Rp = Math.min(Math.max(Psx, Qsx, Rsx), this.WIDTH);
 
-                    const [Pa] = unpack(list[i].color);
-                    const PLab = ColorToLab(list[i].color);
-                    const [Qa] = unpack(list[j].color);
-                    const QLab = ColorToLab(list[j].color);
-                    const [Ra] = unpack(list[j].color);
-                    const RLab = ColorToLab(list[k].color);
+                    const Pa = pColor.a;
+                    const Qa = qColor.a;
+                    const Ra = rColor.a;
+                    const pNormColor = {
+                        r: pColor.r / 255,
+                        g: pColor.g / 255,
+                        b: pColor.b / 255,
+                    };
+
+                    const qNormColor = {
+                        r: qColor.r / 255,
+                        g: qColor.g / 255,
+                        b: qColor.b / 255,
+                    };
+
+                    const rNormColor = {
+                        r: rColor.r / 255,
+                        g: rColor.g / 255,
+                        b: rColor.b / 255,
+                    };
+
+                    // Ambient light
+                    const pLitColor = {
+                        a: Pa,
+                        r: pNormColor.r * this._ambientLight.r,
+                        g: pNormColor.g * this._ambientLight.g,
+                        b: pNormColor.b * this._ambientLight.b,
+                    }
+
+                    const qLitColor = {
+                        a: Qa,
+                        r: qNormColor.r * this._ambientLight.r,
+                        g: qNormColor.g * this._ambientLight.g,
+                        b: qNormColor.b * this._ambientLight.b,
+                    };
+
+                    const rLitColor = {
+                        a: Ra,
+                        r: rNormColor.r * this._ambientLight.r,
+                        g: rNormColor.g * this._ambientLight.g,
+                        b: rNormColor.b * this._ambientLight.b,
+                    };
+
+                    for (let l of lightPositions) {
+                        let pLdir = I3DXMatrixSubtract(pCam, l.pos) as I3DXVec;
+                        const pLdist = I3DXVectorLength(pLdir);
+                        pLdir = I3DXMatrixScale(pLdir, 1/pLdist) as I3DXVec;
+                        const pLambert = Math.max(I3DXVectorDot(I3DXVector3(pLdir.data[0], pLdir.data[1], pLdir.data[2]), nCam), 0);
+                        const pAtten = l.light.atten0 + l.light.atten1 * pLdist + l.light.atten2 * pLdist * pLdist;
+                        
+                        pLitColor.r += pNormColor.r * l.light.diffuse!.r * pLambert * 1.0 / pAtten;
+                        pLitColor.g += pNormColor.g * l.light.diffuse!.g * pLambert * 1.0 / pAtten;
+                        pLitColor.b += pNormColor.b * l.light.diffuse!.b * pLambert * 1.0 / pAtten;
+
+                        let qLdir = I3DXMatrixSubtract(qCam, l.pos) as I3DXVec;
+                        const qLdist = I3DXVectorLength(qLdir);
+                        qLdir = I3DXMatrixScale(qLdir, 1/qLdist) as I3DXVec;
+                        const qLambert = Math.max(I3DXVectorDot(I3DXVector3(qLdir.data[0], qLdir.data[1], qLdir.data[2]), nCam), 0);
+                        const qAtten = l.light.atten0 + l.light.atten1 * qLdist + l.light.atten2 * qLdist * qLdist;
+
+                        qLitColor.r += qNormColor.r * l.light.diffuse!.r * qLambert * 1.0 / qAtten;
+                        qLitColor.g += qNormColor.g * l.light.diffuse!.g * qLambert * 1.0 / qAtten;
+                        qLitColor.b += qNormColor.b * l.light.diffuse!.b * qLambert * 1.0 / qAtten;
+
+                        let rLdir = I3DXMatrixSubtract(rCam, l.pos) as I3DXVec;
+                        const rLdist = I3DXVectorLength(rLdir);
+                        rLdir = I3DXMatrixScale(rLdir, 1/rLdist) as I3DXVec;
+                        const rLambert = Math.max(I3DXVectorDot(I3DXVector3(rLdir.data[0], rLdir.data[1], rLdir.data[2]), nCam), 0);
+                        const rAtten = l.light.atten0 + l.light.atten1 * rLdist + l.light.atten2 * rLdist * rLdist;
+
+                        rLitColor.r += rNormColor.r * l.light.diffuse!.r * rLambert * 1.0 / rAtten;
+                        rLitColor.g += rNormColor.g * l.light.diffuse!.g * rLambert * 1.0 / rAtten;
+                        rLitColor.b += rNormColor.b * l.light.diffuse!.b * rLambert * 1.0 / rAtten;
+
+                    }
+
+                    pLitColor.r = Math.min(pLitColor.r, 1.0) * 255;
+                    pLitColor.g = Math.min(pLitColor.g, 1.0) * 255;
+                    pLitColor.b = Math.min(pLitColor.b, 1.0) * 255;
+
+                    qLitColor.r = Math.min(qLitColor.r, 1.0) * 255;
+                    qLitColor.g = Math.min(qLitColor.g, 1.0) * 255;
+                    qLitColor.b = Math.min(qLitColor.b, 1.0) * 255;
+
+                    rLitColor.r = Math.min(rLitColor.r, 1.0) * 255;
+                    rLitColor.g = Math.min(rLitColor.g, 1.0) * 255;
+                    rLitColor.b = Math.min(rLitColor.b, 1.0) * 255;
+
+                    // Calculate light colors and convert to L*a*b*
+                    const PLab = ColorToLab(pLitColor);
+                    const QLab = ColorToLab(qLitColor);
+                    const RLab = ColorToLab(rLitColor);
 
                     // x and y here are literally pixel coordinates
                     for (let y = Tp; y <= Bp; y++) {
@@ -307,7 +433,7 @@ export class I3DXDevice {
                             const L = PLab[0] * Wp + QLab[0] * Wq + RLab[0] * Wr;
                             const a = PLab[1] * Wp + QLab[1] * Wq + RLab[1] * Wr;
                             const b = PLab[2] * Wp + QLab[2] * Wq + RLab[2] * Wr;
-                            const [_, vr, vg, vb] = unpack(LabToColor(L, a, b));
+                            const { r: vr, g: vg, b: vb } = LabToColor(L, a, b);
 
                             const c = pack(
                                 Math.round(Pa * Wp + Qa * Wq + Ra * Wr),
@@ -326,7 +452,7 @@ export class I3DXDevice {
     EndScene() {
         const max = this.WIDTH * this.HEIGHT * 4;
         for (let i = 0; i < max; ) {
-            const [a, r, g, b] = unpack(this._zbufferData[i/4]);
+            const { a, r, g, b } = unpack(this._zbufferData[i/4]);
             this._backBuffer.data[i++] = r;
             this._backBuffer.data[i++] = g;
             this._backBuffer.data[i++] = b;
@@ -339,19 +465,18 @@ export class I3DXDevice {
     }
 
     protected ZBufferSet(x: number, y: number, color: Color, depth: number) {
-        //console.log(`setting ${x},${y},${depth} to ${unpack(color)}`);
         const idx = this.WIDTH * (y - 1) + x;
         const zdepth = this._zbufferDepth[idx];
         const zcolor = this._zbufferData[idx];
 
         // Current pixel is solid and closer
-        const [za] = unpack(zcolor);
+        const { a: za } = unpack(zcolor);
         if (za >= 255 && zdepth < depth) {
             return;
         }
 
         // New pixel is solid, or no current color
-        const [a] = unpack(color);
+        const { a } = unpack(color);
 
         if ((a >= 255 && depth < zdepth) || za === 0) {
             this._zbufferData[idx] = color;

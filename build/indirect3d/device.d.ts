@@ -1,6 +1,7 @@
-import { Color } from './color';
+import { Color, I3DColor } from './color';
 import { I3DXMatrix } from './matrix';
 import { I3DXVertex } from './geometry';
+import { I3DLight } from './lights';
 export declare const I3DTS_WORLD = "world";
 export declare const I3DTS_VIEW = "view";
 export declare const I3DTS_PROJECTION = "projection";
@@ -25,7 +26,12 @@ export declare class I3DXDevice {
     };
     protected _zbufferData: Int32Array;
     protected _zbufferDepth: Float32Array;
+    protected _ambientLight: I3DColor;
+    protected _lights: I3DLight[];
     constructor(container: HTMLElement, WIDTH: number, HEIGHT: number);
+    SetAmbientLight(color: I3DColor): void;
+    SetLight(index: number, light: I3DLight): void;
+    GetLight(index: number): I3DLight | undefined;
     SetTransform(type: I3DXTransformType, matrix: I3DXMatrix): void;
     MultiplyTransform(type: I3DXTransformType, matrix: I3DXMatrix): void;
     BeginScene(): void;

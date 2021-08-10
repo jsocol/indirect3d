@@ -246,6 +246,10 @@ export class I3DXVec extends I3DXMatrix {
     set w(value: number) {
         this.data[3] = value;
     }
+
+    toVec3(): I3DXVec {
+        return I3DXVector3(this.x, this.y, this.z);
+    }
 }
 
 export function I3DXVector(m: number, data?: number[]): I3DXVec {
@@ -267,7 +271,7 @@ export function I3DXVectorCross(a: I3DXVec, b: I3DXVec): I3DXVec {
 
 export function I3DXVectorDot(a: I3DXVec, b: I3DXVec): number {
     if (a.rows !== b.rows || a.cols !== b.cols) {
-        throw new Error("Vectors must be the same size!");
+        throw new Error(`Vectors must be the same size! (${a.rows}x${a.cols}) vs (${b.rows}x${b.cols})`);
     }
     let total = 0;
     const l = a.rows * a.cols;

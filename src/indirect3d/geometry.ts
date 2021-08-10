@@ -1,4 +1,4 @@
-import { Color } from './color';
+import { I3DColor } from './color';
 import {
   Degrees,
   I3DXMatrix,
@@ -10,12 +10,14 @@ import {
   I3DXVectorDot,
   I3DXVectorUnit,
 } from './matrix';
+import {I3DMaterial} from './material';
 
 export class I3DXVertex {
   coordinates: I3DXVec
-  color: Color
+  color: I3DColor
+  material?: I3DMaterial
 
-  constructor(x: number, y: number, z: number, color: Color) {
+  constructor(x: number, y: number, z: number, color: I3DColor) {
     const c = I3DXVector(4, [x, y, z, 1]);
     this.coordinates = c;
     this.color = color;

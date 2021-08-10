@@ -33,6 +33,7 @@ export declare class I3DXVec extends I3DXMatrix {
     set z(value: number);
     get w(): number;
     set w(value: number);
+    toVec3(): I3DXVec;
 }
 export declare function I3DXVector(m: number, data?: number[]): I3DXVec;
 export declare function I3DXVector3(x: number, y: number, z: number): I3DXVec;
