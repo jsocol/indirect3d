@@ -122,6 +122,7 @@ export class I3DXDevice {
         this._backBuffer = this._ctx.createImageData(this.WIDTH, this.HEIGHT);
     }
 
+    // Take a point in perspective space and its color, and draw it.
     protected drawPoint(transformed4vec: I3DXVec, color: I3DColor) {
         const bx = transformed4vec.x / transformed4vec.w;
         const by = transformed4vec.y / transformed4vec.w;
@@ -139,6 +140,72 @@ export class I3DXDevice {
             g = g * this._ambientLight.g;
             b = b * this._ambientLight.b;
             this.ZBufferSet(sx, sy, pack(a, r, g, b), bz);
+        }
+    }
+
+    // Take two points in perspective space and their colors, and interpolate a line between them.
+    protected drawLine(p0: I3DXVec, c0: I3DColor, p1: I3DXVec, c1: I3DColor) {
+        // convert to the screen
+        const bx0 = p0.x / p0.w;
+        const by0 = p0.y / p0.w;
+        const bz0 = p0.z / p0.w;
+        const bx1 = p1.x / p1.w;
+        const by1 = p1.y / p1.w;
+        const bz1 = p1.z / p1.w;
+        
+        // Given a distance from 0 to 1 along a line segment
+        // between point f0 and point f1, return the appropriate
+        // color.
+        // TODO: This is a bad way to do coloring.
+        const { a: a0, r: r0, g: g0, b: b0 } = c0;
+        const { a: a1, r: r1, g: g1, b: b1 } = c1;
+        const da = a1 - a0;
+        const dr = r1 - r0;
+        const dg = g1 - g0;
+        const db = b1 - b0;
+        
+        const color = (distance: number): Color => {
+            return pack(
+                Math.round(da * distance + a0),
+                Math.round(dr * distance + r0),
+                Math.round(dg * distance + g0),
+                Math.round(db * distance + b0),
+            );
+        };
+
+        // Given a distance from 0 to 1 along a line segment
+        // between point f0 and point f1, return a 3D, transformed
+        // position.
+        const dx = bx1 - bx0;
+        const dy = by1 - by0;
+        const dz = bz1 - bz0;
+
+        const pos = (distance: number): [number, number, number] => {
+            return [
+                dx * distance + bx0,
+                dy * distance + by0,
+                dz * distance + bz0,
+            ];
+        };
+
+        const sx0 = Math.round((1 - bx0) * this.HWIDTH);
+        const sx1 = Math.round((1 - bx1) * this.HWIDTH);
+        const dsx = Math.abs(sx1 - sx0);
+
+        for (let j = 0; j <= dsx; j++) {
+            const dist = j / dsx;
+            const [x, y, z] = pos(dist);
+            const c = color(dist);
+
+            if (
+                Math.abs(x) < 1 &&
+                Math.abs(y) < 1 &&
+                Math.abs(z) < 1
+            ) {
+                const sx = Math.round((1 - x) * this.HWIDTH);
+                const sy = Math.round((1 - y) * this.HHEIGHT);
+                this.ZBufferSet(sx, sy, c, z);
+            }
         }
     }
 
@@ -168,70 +235,11 @@ export class I3DXDevice {
                     const p1 = list[i+1];
 
                     // These should be points in the perspective space
-                    const f0 = I3DXMatrixMultiply(transform, p0.coordinates);
-                    const f1 = I3DXMatrixMultiply(transform, p1.coordinates);
+                    const f0 = I3DXMatrixMultiply(transform, p0.coordinates) as I3DXVec;
+                    const f1 = I3DXMatrixMultiply(transform, p1.coordinates) as I3DXVec;
 
-                    // convert to the screen
-                    const bx0 = f0.data[0] / f0.data[3];
-                    const by0 = f0.data[1] / f0.data[3];
-                    const bz0 = f0.data[2] / f0.data[3];
-                    const bx1 = f1.data[0] / f1.data[3];
-                    const by1 = f1.data[1] / f1.data[3];
-                    const bz1 = f1.data[2] / f1.data[3];
-                    
-                    // Given a distance from 0 to 1 along a line segment
-                    // between point f0 and point f1, return the appropriate
-                    // color.
-                    const { a: a0, r: r0, g: g0, b: b0 } = list[i].color;
-                    const { a: a1, r: r1, g: g1, b: b1 } = list[i+1].color;
-                    const da = a1 - a0;
-                    const dr = r1 - r0;
-                    const dg = g1 - g0;
-                    const db = b1 - b0;
-                    
-                    const color = (distance: number): Color => {
-                        return pack(
-                            Math.round(da * distance + a0),
-                            Math.round(dr * distance + r0),
-                            Math.round(dg * distance + g0),
-                            Math.round(db * distance + b0),
-                        );
-                    };
+                    this.drawLine(f0, p0.color, f1, p1.color);
 
-                    // Given a distance from 0 to 1 along a line segment
-                    // between point f0 and point f1, return a 3D, transformed
-                    // position.
-                    const dx = bx1 - bx0;
-                    const dy = by1 - by0;
-                    const dz = bz1 - bz0;
-
-                    const pos = (distance: number): [number, number, number] => {
-                        return [
-                            dx * distance + bx0,
-                            dy * distance + by0,
-                            dz * distance + bz0,
-                        ];
-                    };
-
-                    const sx0 = Math.round((1 - bx0) * this.HWIDTH);
-                    const sx1 = Math.round((1 - bx1) * this.HWIDTH);
-                    const dsx = Math.abs(sx1 - sx0);
-
-                    for (let j = 0; j <= dsx; j++) {
-                        const dist = j / dsx;
-                        const [x, y, z] = pos(dist);
-                        const c = color(dist);
-
-                        if (
-                            Math.abs(x) < 1 &&
-                            Math.abs(y) < 1 &&
-                            Math.abs(z) < 1
-                        ) {
-                            const sx = Math.round((1 - x) * this.HWIDTH);
-                            const sy = Math.round((1 - y) * this.HHEIGHT);
-                            this.ZBufferSet(sx, sy, c, z);
-                        }
-                    }
                     if (mode === I3DPT_LINELIST) {
                         // Disconnect the lines by moving along the list
                         i++;
