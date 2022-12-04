@@ -28,6 +28,8 @@ import {
   I3DPT_TRIANGLEFAN,
   I3DXRotateXMatrix,
   I3DXScaleMatrix,
+  I3DVertexBuffer,
+  I3DIndexBuffer,
 } from './indirect3d';
 import {I3DLight, I3DLightType} from './indirect3d/lights';
 
@@ -56,13 +58,16 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
     new I3DXVertex(2.5, -3.0, 0.0, ARGB(0xff,0,0,0xff)),
   ];
 
-  const pyramid = [
+  const pyramidBuffer: I3DVertexBuffer = [
     new I3DXVertex(0, 1, 0, XRGB(0xff, 0xff, 0xff)),
     new I3DXVertex(-1, 0, 0, XRGB(0xff, 0x40, 0x40)),
     new I3DXVertex(0, 0, -1, XRGB(0xff, 0xff, 0x40)),
     new I3DXVertex(1, 0, 0, XRGB(0x40, 0x40, 0xff)),
     new I3DXVertex(0, 0, 1, XRGB(0x40, 0xff, 0x40)),
-    new I3DXVertex(-1, 0, 0, XRGB(0xff, 0x40, 0x40)),
+  ];
+
+  const pyramidIndexBuffer: I3DIndexBuffer = [
+    0, 1, 2, 3, 4, 1,
   ];
 
   const yellow = ARGB(0xff, 0xff, 0xff, 0xff);
@@ -273,7 +278,9 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
 
     i3d.SetTransform(I3DTS_WORLD, I3DXRotateYMatrix(idx / 3));
     i3d.MultiplyTransform(I3DTS_WORLD, I3DXTranslateMatrix(8, 0, 0));
-    i3d.DrawPrimitiveUP(I3DPT_TRIANGLEFAN, pyramid);
+    i3d.SetStreamSource(0, pyramidBuffer);
+    i3d.SetIndices(pyramidIndexBuffer);
+    i3d.DrawIndexedPrimitive(I3DPT_TRIANGLEFAN, 0, 4);
 
     i3d.EndScene();
     i3d.Present();

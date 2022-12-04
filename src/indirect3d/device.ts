@@ -21,6 +21,7 @@ import {
     I3DXVertex,
 } from './geometry';
 import {I3DLight, I3DLightType} from './lights';
+import {I3DIndexBuffer, I3DVertexBuffer} from './buffers';
 
 const WHITE = XRGB(0xff, 0xff, 0xff);
 
@@ -63,6 +64,8 @@ export class I3DXDevice {
         a: 0.0,
     };
     protected _lights: I3DLight[] = [];
+    protected _vertexStreams: I3DVertexBuffer[] = [];
+    protected _indexBuffer: I3DIndexBuffer = [];
 
     constructor(container: HTMLElement, WIDTH: number, HEIGHT: number) {
         this.WIDTH = WIDTH;
@@ -209,6 +212,7 @@ export class I3DXDevice {
         }
     }
 
+    // Take three points in *camera* space and their colors and interpolate a triangle between them.
     protected drawTriangle(pCam: I3DXVec, pColor: I3DColor, qCam:I3DXVec, qColor: I3DColor, rCam: I3DXVec, rColor: I3DColor) {
         const screenNormal = I3DXVector3(0, 0, 1);
 
@@ -397,7 +401,7 @@ export class I3DXDevice {
         }
     }
 
-    DrawPrimitiveUP(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]) {
+    DrawPrimitiveUP(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]): boolean {
         const transformCamera = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
         const transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transformCamera);
 
@@ -407,7 +411,7 @@ export class I3DXDevice {
                     const f = I3DXMatrixMultiply(transform, list[i].coordinates) as I3DXVec;
                     this.drawPoint(f, list[i].color);
                 }
-                break;
+                return true;
             case I3DPT_LINELIST:
             case I3DPT_LINESTRIP:
                 for (let i = 0; i < list.length - 1; i++) {
@@ -426,7 +430,7 @@ export class I3DXDevice {
                         i++;
                     }
                 }
-                break;
+                return true;
             case I3DPT_TRIANGLELIST:
             case I3DPT_TRIANGLESTRIP:
             case I3DPT_TRIANGLEFAN:
@@ -463,7 +467,92 @@ export class I3DXDevice {
 
                     this.drawTriangle(pCam, pColor, qCam, qColor, rCam, rColor);
                 }
-                break;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    SetStreamSource(index: number, buffer: I3DVertexBuffer) {
+        this._vertexStreams[index] = buffer;
+    }
+
+    SetIndices(buffer: I3DIndexBuffer) {
+        this._indexBuffer = buffer;
+    }
+
+    DrawIndexedPrimitive(mode: I3DXPrimitiveTopologyType, startIndex: number, primCount: number): boolean {
+        const transformCamera = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
+        const transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transformCamera);
+
+        let drawn = 0;
+        const streamIndex = 0;
+
+        switch(mode) {
+            case I3DPT_LINELIST:
+            case I3DPT_LINESTRIP:
+                for (let i = startIndex; drawn < primCount; i++, drawn++) {
+                    const i0 = this._indexBuffer[i];
+                    const i1 = this._indexBuffer[i+1];
+
+                    const p0 = this._vertexStreams[streamIndex][i0];
+                    const p1 = this._vertexStreams[streamIndex][i1];
+
+                    const f0 = I3DXMatrixMultiply(transform, p0.coordinates) as I3DXVec;
+                    const f1 = I3DXMatrixMultiply(transform, p1.coordinates) as I3DXVec;
+
+                    this.drawLine(f0, p0.color, f1, p1.color);
+
+                    if (mode === I3DPT_LINELIST) {
+                        // Disconnect the lines by moving along the list
+                        i++;
+                    }
+                }
+                return true;
+            case I3DPT_TRIANGLELIST:
+            case I3DPT_TRIANGLESTRIP:
+            case I3DPT_TRIANGLEFAN:
+                for (let m = startIndex; drawn < primCount; m++, drawn++) {
+                    let i: number, j: number, k: number;
+
+                    if (mode === I3DPT_TRIANGLELIST) {
+                        i = m;
+                        j = m + 1;
+                        k = m + 2;
+                        m += 3;
+                    } else if (mode === I3DPT_TRIANGLESTRIP) {
+                        i = m;
+                        j = m + 1;
+                        k = m + 2;
+                        if (m % 2 === 1) {
+                            [j, k] = [k, j]
+                        }
+                        m++;
+                    } else {
+                        i = startIndex;
+                        j = m + 1;
+                        k = m + 2;
+                    }
+
+                    const i0 = this._indexBuffer[i];
+                    const i1 = this._indexBuffer[j];
+                    const i2 = this._indexBuffer[k];
+
+                    const stream = this._vertexStreams[streamIndex];
+
+                    const p = stream[i0];
+                    const q = stream[i1];
+                    const r = stream[i2];
+
+                    const pCam = I3DXMatrixMultiply(transformCamera, p.coordinates) as I3DXVec;
+                    const qCam = I3DXMatrixMultiply(transformCamera, q.coordinates) as I3DXVec;
+                    const rCam = I3DXMatrixMultiply(transformCamera, r.coordinates) as I3DXVec;
+
+                    this.drawTriangle(pCam, p.color, qCam, q.color, rCam, r.color);
+                }
+                return true;
+            default:
+                return false;
         }
     }
 

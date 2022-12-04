@@ -1,1 +1,1 @@
-{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../src/indirect3d/index.ts"],"names":[],"mappings":"AAAA,cAAc,SAAS,CAAC;AACxB,cAAc,UAAU,CAAC;AACzB,cAAc,YAAY,CAAC;AAC3B,cAAc,UAAU,CAAC"}
+{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../src/indirect3d/index.ts"],"names":[],"mappings":"AAAA,cAAc,WAAW,CAAC;AAC1B,cAAc,SAAS,CAAC;AACxB,cAAc,UAAU,CAAC;AACzB,cAAc,YAAY,CAAC;AAC3B,cAAc,UAAU,CAAC"}
