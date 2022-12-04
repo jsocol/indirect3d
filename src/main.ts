@@ -45,6 +45,13 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
   const dirYInput = document.getElementById('direction-y')! as HTMLInputElement;
   const dirZInput = document.getElementById('direction-z')! as HTMLInputElement;
 
+  const basicLightInput = document.getElementById('light-0')! as HTMLInputElement;
+  const keyLightInput = document.getElementById('light-1')! as HTMLInputElement;
+  const sunLightInput = document.getElementById('light-2')! as HTMLInputElement;
+  const sunXInput = document.getElementById('sun-x') as HTMLInputElement;
+  const sunYInput = document.getElementById('sun-y') as HTMLInputElement;
+  const sunZInput = document.getElementById('sun-z') as HTMLInputElement;
+
   const fovyInput = document.getElementById('fovy')! as HTMLInputElement;
 
   const fpsMeter = document.getElementById('fps')! as HTMLSpanElement;
@@ -70,70 +77,69 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
     0, 1, 2, 3, 4, 1,
   ];
 
-  const yellow = ARGB(0xff, 0xff, 0xff, 0xff);
-  const darkyellow = ARGB(0xff, 0xff, 0xff, 0xff);
-  // const darkyellow = ARGB(0x80, 0xc0, 0x8f, 0x40);
+  const ring1 = ARGB(0xff, 0xff, 0xff, 0xff);
+  const ring2 = ARGB(0xff, 0xc0, 0x8f, 0x40);
   const root2o2 = Math.sqrt(2) / 2;
   const root2m2 = Math.sqrt(2 - Math.sqrt(2)) / 2;
   const root2p2 = Math.sqrt(2 + Math.sqrt(2)) / 2;
   const ring = [
-    new I3DXVertex(1, 1, 0, yellow),
-    new I3DXVertex(root2p2, 0, root2m2, darkyellow),
-    new I3DXVertex(root2o2, 1, root2o2, yellow),
-    new I3DXVertex(root2m2, 0, root2p2, darkyellow),
-    new I3DXVertex(0, 1, 1, yellow),
-    new I3DXVertex(-root2m2, 0, root2p2, darkyellow),
-    new I3DXVertex(-root2o2, 1, root2o2, yellow),
-    new I3DXVertex(-root2p2, 0, root2m2, darkyellow),
-    new I3DXVertex(-1, 1, 0, yellow),
-    new I3DXVertex(-root2p2, 0, -root2m2, darkyellow),
-    new I3DXVertex(-root2o2, 1, -root2o2, yellow),
-    new I3DXVertex(-root2m2, 0, -root2p2, darkyellow),
-    new I3DXVertex(0, 1, -1, yellow),
-    new I3DXVertex(root2m2, 0, -root2p2, darkyellow),
-    new I3DXVertex(root2o2, 1, -root2o2, yellow),
-    new I3DXVertex(root2p2, 0, -root2m2, darkyellow),
-    new I3DXVertex(1, 1, 0, yellow),
-    new I3DXVertex(root2p2, 0, root2m2, darkyellow),
-    new I3DXVertex(root2o2, 1, root2o2, yellow),
-    new I3DXVertex(root2p2, 0, root2m2, darkyellow),
-    new I3DXVertex(1, 1, 0, yellow),
-    new I3DXVertex(root2p2, 0, -root2m2, darkyellow),
-    new I3DXVertex(root2o2, 1, -root2o2, yellow),
-    new I3DXVertex(root2m2, 0, -root2p2, darkyellow),
-    new I3DXVertex(0, 1, -1, yellow),
-    new I3DXVertex(-root2m2, 0, -root2p2, darkyellow),
-    new I3DXVertex(-root2o2, 1, -root2o2, yellow),
-    new I3DXVertex(-root2p2, 0, -root2m2, darkyellow),
-    new I3DXVertex(-1, 1, 0, yellow),
-    new I3DXVertex(-root2p2, 0, root2m2, darkyellow),
-    new I3DXVertex(-root2o2, 1, root2o2, yellow),
-    new I3DXVertex(-root2m2, 0, root2p2, darkyellow),
-    new I3DXVertex(0, 1, 1, yellow),
-    new I3DXVertex(root2m2, 0, root2p2, darkyellow),
-    new I3DXVertex(root2o2, 1, root2o2, yellow),
-    new I3DXVertex(root2p2, 0, root2m2, darkyellow),
-    new I3DXVertex(1, 1, 0, yellow),
+    new I3DXVertex(1, 1, 0, ring1),
+    new I3DXVertex(root2p2, 0, root2m2, ring2),
+    new I3DXVertex(root2o2, 1, root2o2, ring1),
+    new I3DXVertex(root2m2, 0, root2p2, ring2),
+    new I3DXVertex(0, 1, 1, ring1),
+    new I3DXVertex(-root2m2, 0, root2p2, ring2),
+    new I3DXVertex(-root2o2, 1, root2o2, ring1),
+    new I3DXVertex(-root2p2, 0, root2m2, ring2),
+    new I3DXVertex(-1, 1, 0, ring1),
+    new I3DXVertex(-root2p2, 0, -root2m2, ring2),
+    new I3DXVertex(-root2o2, 1, -root2o2, ring1),
+    new I3DXVertex(-root2m2, 0, -root2p2, ring2),
+    new I3DXVertex(0, 1, -1, ring1),
+    new I3DXVertex(root2m2, 0, -root2p2, ring2),
+    new I3DXVertex(root2o2, 1, -root2o2, ring1),
+    new I3DXVertex(root2p2, 0, -root2m2, ring2),
+    new I3DXVertex(1, 1, 0, ring1),
+    new I3DXVertex(root2p2, 0, root2m2, ring2),
+    new I3DXVertex(root2o2, 1, root2o2, ring1),
+    new I3DXVertex(root2p2, 0, root2m2, ring2),
+    new I3DXVertex(1, 1, 0, ring1),
+    new I3DXVertex(root2p2, 0, -root2m2, ring2),
+    new I3DXVertex(root2o2, 1, -root2o2, ring1),
+    new I3DXVertex(root2m2, 0, -root2p2, ring2),
+    new I3DXVertex(0, 1, -1, ring1),
+    new I3DXVertex(-root2m2, 0, -root2p2, ring2),
+    new I3DXVertex(-root2o2, 1, -root2o2, ring1),
+    new I3DXVertex(-root2p2, 0, -root2m2, ring2),
+    new I3DXVertex(-1, 1, 0, ring1),
+    new I3DXVertex(-root2p2, 0, root2m2, ring2),
+    new I3DXVertex(-root2o2, 1, root2o2, ring1),
+    new I3DXVertex(-root2m2, 0, root2p2, ring2),
+    new I3DXVertex(0, 1, 1, ring1),
+    new I3DXVertex(root2m2, 0, root2p2, ring2),
+    new I3DXVertex(root2o2, 1, root2o2, ring1),
+    new I3DXVertex(root2p2, 0, root2m2, ring2),
+    new I3DXVertex(1, 1, 0, ring1),
   ];
 
   const ringBuf: I3DVertexBuffer = [
-    new I3DXVertex(-1, 1, 0, yellow), // 0
-    new I3DXVertex(-root2m2, 0, -root2p2, darkyellow), // 1
-    new I3DXVertex(-root2m2, 0, root2p2, darkyellow), // 2
-    new I3DXVertex(-root2o2, 1, -root2o2, yellow), // 3
-    new I3DXVertex(-root2o2, 1, root2o2, yellow), // 4
-    new I3DXVertex(-root2p2, 0, -root2m2, darkyellow), // 5
-    new I3DXVertex(-root2p2, 0, root2m2, darkyellow), // 6
-    new I3DXVertex(0, 1, -1, yellow), // 7
-    new I3DXVertex(0, 1, 1, yellow), // 8
-    new I3DXVertex(1, 1, 0, yellow), // 9
-    new I3DXVertex(root2m2, 0, -root2p2, darkyellow), // 10
-    new I3DXVertex(root2m2, 0, root2p2, darkyellow), // 11
-    new I3DXVertex(root2o2, 1, -root2o2, yellow), // 12
-    new I3DXVertex(root2o2, 1, root2o2, yellow), // 13
-    new I3DXVertex(root2o2, 1, root2o2, yellow), // 14
-    new I3DXVertex(root2p2, 0, -root2m2, darkyellow), // 15
-    new I3DXVertex(root2p2, 0, root2m2, darkyellow), // 16
+    new I3DXVertex(-1, 1, 0, ring1), // 0
+    new I3DXVertex(-root2m2, 0, -root2p2, ring2), // 1
+    new I3DXVertex(-root2m2, 0, root2p2, ring2), // 2
+    new I3DXVertex(-root2o2, 1, -root2o2, ring1), // 3
+    new I3DXVertex(-root2o2, 1, root2o2, ring1), // 4
+    new I3DXVertex(-root2p2, 0, -root2m2, ring2), // 5
+    new I3DXVertex(-root2p2, 0, root2m2, ring2), // 6
+    new I3DXVertex(0, 1, -1, ring1), // 7
+    new I3DXVertex(0, 1, 1, ring1), // 8
+    new I3DXVertex(1, 1, 0, ring1), // 9
+    new I3DXVertex(root2m2, 0, -root2p2, ring2), // 10
+    new I3DXVertex(root2m2, 0, root2p2, ring2), // 11
+    new I3DXVertex(root2o2, 1, -root2o2, ring1), // 12
+    new I3DXVertex(root2o2, 1, root2o2, ring1), // 13
+    new I3DXVertex(root2o2, 1, root2o2, ring1), // 14
+    new I3DXVertex(root2p2, 0, -root2m2, ring2), // 15
+    new I3DXVertex(root2p2, 0, root2m2, ring2), // 16
   ];
 
   const ringIdxBuf: I3DIndexBuffer = [
@@ -190,7 +196,7 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
   };
   basicLight.position = I3DXVector(4, [-8, 5, 15, 1]);
   basicLight.atten0 = 0;
-  basicLight.atten1 = 0.01;
+  basicLight.atten1 = 0.05;
   basicLight.atten2 = 0.001;
   i3d.SetLight(0, basicLight);
 
@@ -198,14 +204,24 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
   keyLight.diffuse = {
     a: 0.0,
     r: 0.5,
-    g: 0.7,
+    g: 0.05,
     b: 0.2,
   };
-  keyLight.position = I3DXVector(4, [1, 3, -15, 1]);
+  keyLight.position = I3DXVector(4, [1, 0, -15, 1]);
   keyLight.atten0 = 0;
-  keyLight.atten1 = 0.1;
+  keyLight.atten1 = 0.01;
   keyLight.atten2 = 0.001;
   i3d.SetLight(1, keyLight);
+
+  const sunLight = new I3DLight(I3DLightType.Directional);
+  sunLight.diffuse = {
+    a: 0.0,
+    r: 0.4,
+    g: 0.4,
+    b: 0.3,
+  };
+  sunLight.direction = I3DXVector(3, [-0.5, -0.5, -0.5]);
+  i3d.SetLight(2, sunLight);
 
   let idx = 0;
   let dPosition = 0.2;
@@ -283,6 +299,11 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
     i3d.SetTransform(I3DTS_VIEW, matView);
     i3d.SetTransform(I3DTS_PROJECTION, matProj);
     i3d.SetTransform(I3DTS_WORLD, id);
+
+    i3d.LightEnable(0, basicLightInput.checked);
+    i3d.LightEnable(1, keyLightInput.checked);
+    i3d.LightEnable(2, sunLightInput.checked);
+    sunLight.direction = I3DXVector3(sunXInput.valueAsNumber, sunYInput.valueAsNumber, sunZInput.valueAsNumber);
 
     const blueDepth = blueDepthInput.valueAsNumber;
     const blueTransform = I3DXTranslateMatrix(-9, 2, blueDepth);

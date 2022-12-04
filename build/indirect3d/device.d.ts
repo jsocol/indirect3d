@@ -28,13 +28,17 @@ export declare class I3DXDevice {
     protected _zbufferData: Int32Array;
     protected _zbufferDepth: Float32Array;
     protected _ambientLight: I3DColor;
-    protected _lights: I3DLight[];
+    protected _lights: {
+        enabled: boolean;
+        light: I3DLight;
+    }[];
     protected _vertexStreams: I3DVertexBuffer[];
     protected _indexBuffer: I3DIndexBuffer;
     constructor(container: HTMLElement, WIDTH: number, HEIGHT: number);
     SetAmbientLight(color: I3DColor): void;
     SetLight(index: number, light: I3DLight): void;
     GetLight(index: number): I3DLight | undefined;
+    LightEnable(index: number, enabled: boolean): void;
     SetTransform(type: I3DXTransformType, matrix: I3DXMatrix): void;
     MultiplyTransform(type: I3DXTransformType, matrix: I3DXMatrix): void;
     BeginScene(): void;

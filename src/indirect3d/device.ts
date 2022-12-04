@@ -8,6 +8,7 @@ import {
     I3DXMatrixSubtract,
     I3DXToRadian,
     I3DXVec,
+    I3DXVector,
     I3DXVector3,
     I3DXVectorCross,
     I3DXVectorDot,
@@ -63,7 +64,7 @@ export class I3DXDevice {
         b: 0.0,
         a: 0.0,
     };
-    protected _lights: I3DLight[] = [];
+    protected _lights: { enabled: boolean, light: I3DLight }[] = [];
     protected _vertexStreams: I3DVertexBuffer[] = [];
     protected _indexBuffer: I3DIndexBuffer = [];
 
@@ -105,11 +106,15 @@ export class I3DXDevice {
     }
 
     SetLight(index: number, light: I3DLight) {
-        this._lights[index] = light;
+        this._lights[index] = {enabled: true, light};
     }
 
     GetLight(index: number): I3DLight | undefined {
-        return this._lights[index];
+        return this._lights[index]?.light;
+    }
+
+    LightEnable(index: number, enabled: boolean) {
+        this._lights[index].enabled = enabled;
     }
 
     SetTransform(type: I3DXTransformType, matrix: I3DXMatrix) {
@@ -216,10 +221,22 @@ export class I3DXDevice {
     protected drawTriangle(pCam: I3DXVec, pColor: I3DColor, qCam:I3DXVec, qColor: I3DColor, rCam: I3DXVec, rColor: I3DColor) {
         const screenNormal = I3DXVector3(0, 0, 1);
 
-        const lightPositions = this._lights.filter((light) => light.type === I3DLightType.Point).map((light) => ({
-            light: light,
-            pos: I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], light.position!),
+        const pointLights = this._lights.filter((l) => l.enabled && l.light.type === I3DLightType.Point).map((l) => ({
+            light: l.light,
+            pos: I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], l.light.position!),
         }));
+
+        const wvMatrix = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
+        const directionalLights = this._lights.filter((l) => l.enabled && l.light.type === I3DLightType.Directional).map((l) => {
+            const light = l.light;
+            const lDir = I3DXVector(4, [light.direction!.x, light.direction!.y, light.direction!.z, 0])
+            const camDir = I3DXMatrixMultiply(wvMatrix, lDir).toColVec();
+            const ret = {
+                light,
+                camDir: I3DXVectorUnit(I3DXVector3(camDir.x, camDir.y, camDir.z)),
+            };
+            return ret;
+        });
 
         const nCam = I3DXVectorUnit(I3DXVectorCross(
             I3DXMatrixSubtract(qCam, pCam) as I3DXVec,
@@ -313,7 +330,22 @@ export class I3DXDevice {
             b: rNormColor.b * this._ambientLight.b,
         };
 
-        for (let l of lightPositions) {
+        for (let l of directionalLights) {
+            const lambert = Math.max(I3DXVectorDot(l.camDir, nCam), 0);
+            pLitColor.r += pNormColor.r * l.light.diffuse!.r * lambert;
+            pLitColor.g += pNormColor.g * l.light.diffuse!.g * lambert;
+            pLitColor.b += pNormColor.b * l.light.diffuse!.b * lambert;
+
+            qLitColor.r += qNormColor.r * l.light.diffuse!.r * lambert;
+            qLitColor.g += qNormColor.g * l.light.diffuse!.g * lambert;
+            qLitColor.b += qNormColor.b * l.light.diffuse!.b * lambert;
+
+            rLitColor.r += rNormColor.r * l.light.diffuse!.r * lambert;
+            rLitColor.g += rNormColor.g * l.light.diffuse!.g * lambert;
+            rLitColor.b += rNormColor.b * l.light.diffuse!.b * lambert;
+        }
+
+        for (let l of pointLights) {
             let pLdir = I3DXMatrixSubtract(pCam, l.pos) as I3DXVec;
             const pLdist = I3DXVectorLength(pLdir);
             pLdir = I3DXMatrixScale(pLdir, 1/pLdist) as I3DXVec;

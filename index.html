@@ -4,6 +4,9 @@
   <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
   <title>Indirect3D</title>
   <style>
+  * {
+    box-sizing: border-box;
+  }
   body {
     background-color: #fff;
     font-family: Georgia, "Times New Roman", Times, serif;
@@ -24,6 +27,17 @@
   canvas {
     background-color: #000;
     display: block;
+  }
+  label {
+    padding: 3px;
+    display: inline-block;
+    border: 1px solid #fff;
+  }
+  label:hover {
+    border: 1px inset #ccc;
+  }
+  div > div {
+    padding: 3px 0;
   }
   </style>
 </head>
@@ -46,7 +60,17 @@
         <label>Y <input id="direction-y" type="number" size="3" value="0.0" step="0.1" disabled></label> (+Y is up)
         <label>Z <input id="direction-z" type="number" size="3" value="-1.0" step="0.1" disabled></label>
       </div>
-      <label>Field of view angle (degrees) <input id="fovy" type="number" size="3" value="30" step="1"></label>
+      <div>
+        Lights:
+        <label>Basic <input id="light-0" type="checkbox" checked></label>,
+        <label>Key <input id="light-1" type="checkbox" checked></label>,
+        <label>Sun <input id="light-2" type="checkbox" checked></label>,
+        Sun direction:
+        <label>X <input id="sun-x" type="number" size="3" value="-0.5" step="0.1"></label>
+        <label>Y <input id="sun-y" type="number" size="3" value="-0.5" step="0.1"></label>
+        <label>Z <input id="sun-z" type="number" size="3" value="-0.5" step="0.1"></label>
+      </div>
+      <label>Field of view angle (degrees) <input id="fovy" type="number" size="3" value="45" step="1"></label>
       <span id="fps"></span>
     </div>
     <h1>Indirect3D</h1>
