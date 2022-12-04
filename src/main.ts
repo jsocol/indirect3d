@@ -256,24 +256,24 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
     const blueDepth = blueDepthInput.valueAsNumber;
     const blueTransform = I3DXTranslateMatrix(-9, 2, blueDepth);
     i3d.SetTransform(I3DTS_WORLD, blueTransform);
-    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftFront);
+    i3d.DrawPrimitiveUP(I3DPT_TRIANGLELIST, triLeftFront);
 
     const redDepth = redDepthInput.valueAsNumber;
     const redTransform = I3DXTranslateMatrix(-9, 2, redDepth);
     i3d.SetTransform(I3DTS_WORLD, redTransform);
-    i3d.DrawPrimitive(I3DPT_TRIANGLELIST, triLeftBack);
+    i3d.DrawPrimitiveUP(I3DPT_TRIANGLELIST, triLeftBack);
 
     i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(I3DXRotateXMatrix(idx / 3), ringSize));
-    i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, ring);
+    i3d.DrawPrimitiveUP(I3DPT_TRIANGLESTRIP, ring);
 
     const left = I3DXTranslateMatrix(0, 0, Math.sin(idx / 2));
 
     i3d.SetTransform(I3DTS_WORLD, left);
-    i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, fixedTriangle);
+    i3d.DrawPrimitiveUP(I3DPT_TRIANGLESTRIP, fixedTriangle);
 
     i3d.SetTransform(I3DTS_WORLD, I3DXRotateYMatrix(idx / 3));
     i3d.MultiplyTransform(I3DTS_WORLD, I3DXTranslateMatrix(8, 0, 0));
-    i3d.DrawPrimitive(I3DPT_TRIANGLEFAN, pyramid);
+    i3d.DrawPrimitiveUP(I3DPT_TRIANGLEFAN, pyramid);
 
     i3d.EndScene();
     i3d.Present();
@@ -312,10 +312,10 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
   }, true);
 
   i3d.BeginScene();
-  i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, fixedTriangle);
+  i3d.DrawPrimitiveUP(I3DPT_TRIANGLESTRIP, fixedTriangle);
 
   i3d.SetTransform(I3DTS_WORLD, I3DXScaleMatrix(2, 1, 2));
-  i3d.DrawPrimitive(I3DPT_TRIANGLESTRIP, ring);
+  i3d.DrawPrimitiveUP(I3DPT_TRIANGLESTRIP, ring);
 
   i3d.EndScene();
   i3d.Present();

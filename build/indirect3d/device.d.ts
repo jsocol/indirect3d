@@ -38,7 +38,7 @@ export declare class I3DXDevice {
     protected drawPoint(transformed4vec: I3DXVec, color: I3DColor): void;
     protected drawLine(p0: I3DXVec, c0: I3DColor, p1: I3DXVec, c1: I3DColor): void;
     protected drawTriangle(pCam: I3DXVec, pColor: I3DColor, qCam: I3DXVec, qColor: I3DColor, rCam: I3DXVec, rColor: I3DColor): void;
-    DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]): void;
+    DrawPrimitiveUP(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]): void;
     EndScene(): void;
     Present(): void;
     protected ZBufferSet(x: number, y: number, color: Color, depth: number): void;

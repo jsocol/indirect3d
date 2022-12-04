@@ -397,7 +397,7 @@ export class I3DXDevice {
         }
     }
 
-    DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]) {
+    DrawPrimitiveUP(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]) {
         const transformCamera = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
         const transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transformCamera);
 
