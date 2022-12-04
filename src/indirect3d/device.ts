@@ -122,6 +122,26 @@ export class I3DXDevice {
         this._backBuffer = this._ctx.createImageData(this.WIDTH, this.HEIGHT);
     }
 
+    protected drawPoint(transformed4vec: I3DXVec, color: I3DColor) {
+        const bx = transformed4vec.x / transformed4vec.w;
+        const by = transformed4vec.y / transformed4vec.w;
+        const bz = transformed4vec.z / transformed4vec.w;
+        // If this is in the field of view
+        if (
+            Math.abs(bx) <= 1 &&
+            Math.abs(by) <= 1 &&
+            Math.abs(bz) <= 1
+        ) {
+            const sx = Math.round((1 - bx) * this.HWIDTH);
+            const sy = Math.round((1 - by) * this.HHEIGHT);
+            let { a, r, g, b } = color;
+            r = r * this._ambientLight.r;
+            g = g * this._ambientLight.g;
+            b = b * this._ambientLight.b;
+            this.ZBufferSet(sx, sy, pack(a, r, g, b), bz);
+        }
+    }
+
     DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]) {
         const transformCamera = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
         const transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transformCamera);
@@ -136,24 +156,8 @@ export class I3DXDevice {
         switch(mode) {
             case I3DPT_POINTLIST:
                 for (let i = 0; i < list.length; i++) {
-                    const f = I3DXMatrixMultiply(transform, list[i].coordinates);
-                    const bx = f.data[0] / f.data[3];
-                    const by = f.data[1] / f.data[3];
-                    const bz = f.data[2] / f.data[3];
-                    // If this is in the field of view
-                    if (
-                        Math.abs(bx) <= 1 &&
-                        Math.abs(by) <= 1 &&
-                        Math.abs(bz) <= 1
-                    ) {
-                        const sx = Math.round((1 - bx) * this.HWIDTH);
-                        const sy = Math.round((1 - by) * this.HHEIGHT);
-                        let { a, r, g, b } = list[i].color;
-                        r = r * this._ambientLight.r;
-                        g = g * this._ambientLight.g;
-                        b = b * this._ambientLight.b;
-                        this.ZBufferSet(sx, sy, pack(a, r, g, b), bz);
-                    }
+                    const f = I3DXMatrixMultiply(transform, list[i].coordinates) as I3DXVec;
+                    this.drawPoint(f, list[i].color);
                 }
                 break;
             case I3DPT_LINELIST:

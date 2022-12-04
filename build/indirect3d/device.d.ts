@@ -1,5 +1,5 @@
 import { Color, I3DColor } from './color';
-import { I3DXMatrix } from './matrix';
+import { I3DXMatrix, I3DXVec } from './matrix';
 import { I3DXVertex } from './geometry';
 import { I3DLight } from './lights';
 export declare const I3DTS_WORLD = "world";
@@ -35,6 +35,7 @@ export declare class I3DXDevice {
     SetTransform(type: I3DXTransformType, matrix: I3DXMatrix): void;
     MultiplyTransform(type: I3DXTransformType, matrix: I3DXMatrix): void;
     BeginScene(): void;
+    protected drawPoint(transformed4vec: I3DXVec, color: I3DColor): void;
     DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]): void;
     EndScene(): void;
     Present(): void;
