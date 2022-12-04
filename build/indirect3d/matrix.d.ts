@@ -7,6 +7,8 @@ export declare class I3DXMatrix {
     get(i: number, j: number): number;
     set(i: number, j: number, value: number): void;
     incr(i: number, j: number, value: number): void;
+    toColVec(): I3DXVec;
+    toRowVec(): I3DXVec;
     debug(): void;
 }
 export declare function I3DXMatrixIdentity(size: number): I3DXMatrix;

@@ -35,6 +35,14 @@ export class I3DXMatrix {
         this.data[this._idx(i, j)] += value;
     }
 
+    toColVec(): I3DXVec {
+        return new I3DXVec(this.rows, 1, [...this.data]);
+    }
+
+    toRowVec(): I3DXVec {
+        return new I3DXVec(this.cols, 1, [...this.data]);
+    }
+
     debug() {
         const rows: number[][] = [];
         for (let i = 0; i < this.rows; i++) {

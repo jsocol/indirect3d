@@ -152,7 +152,7 @@ export class I3DXDevice {
         const bx1 = p1.x / p1.w;
         const by1 = p1.y / p1.w;
         const bz1 = p1.z / p1.w;
-        
+
         // Given a distance from 0 to 1 along a line segment
         // between point f0 and point f1, return the appropriate
         // color.
@@ -163,7 +163,7 @@ export class I3DXDevice {
         const dr = r1 - r0;
         const dg = g1 - g0;
         const db = b1 - b0;
-        
+
         const color = (distance: number): Color => {
             return pack(
                 Math.round(da * distance + a0),
@@ -209,16 +209,197 @@ export class I3DXDevice {
         }
     }
 
-    DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]) {
-        const transformCamera = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
-        const transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transformCamera);
-
+    protected drawTriangle(pCam: I3DXVec, pColor: I3DColor, qCam:I3DXVec, qColor: I3DColor, rCam: I3DXVec, rColor: I3DColor) {
         const screenNormal = I3DXVector3(0, 0, 1);
 
         const lightPositions = this._lights.filter((light) => light.type === I3DLightType.Point).map((light) => ({
             light: light,
             pos: I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], light.position!),
         }));
+
+        const nCam = I3DXVectorUnit(I3DXVectorCross(
+            I3DXMatrixSubtract(qCam, pCam) as I3DXVec,
+            I3DXMatrixSubtract(rCam, pCam) as I3DXVec,
+        ));
+
+        const pPers = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], pCam).toColVec();
+        const qPers = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], qCam).toColVec();
+        const rPers = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], rCam).toColVec();
+
+        const P = I3DXVector3(pPers.x / pPers.w,
+                              pPers.y / pPers.w,
+                              pPers.z / pPers.w);
+        const Q = I3DXVector3(qPers.x / qPers.w,
+                              qPers.y / qPers.w,
+                              qPers.z / qPers.w);
+        const R = I3DXVector3(rPers.x / rPers.w,
+                              rPers.y / rPers.w,
+                              rPers.z / rPers.w);
+
+
+        const QP = I3DXMatrixSubtract(Q, P) as I3DXVec;
+        const RP = I3DXMatrixSubtract(R, P) as I3DXVec;
+        const RQ = I3DXMatrixSubtract(R, Q) as I3DXVec;
+        const PR = I3DXMatrixSubtract(P, R) as I3DXVec;
+        const N = I3DXVectorUnit(I3DXVectorCross(QP, RP));
+
+        // the final parameter to the equation of the plane
+        const d = I3DXVectorDot(screenNormal, P);
+
+        const dN = I3DXVectorDot(N, screenNormal);
+        // if dN === 0, the triangle _should_ be parallel to the ray
+        if (dN <= 0) {
+            return;
+        }
+
+        // Scaled coordinates
+        const Psx = Math.round((1 - P.data[0]) * this.HWIDTH);
+        const Psy = Math.round((1 - P.data[1]) * this.HHEIGHT);
+        const Qsx = Math.round((1 - Q.data[0]) * this.HWIDTH);
+        const Qsy = Math.round((1 - Q.data[1]) * this.HHEIGHT);
+        const Rsx = Math.round((1 - R.data[0]) * this.HWIDTH);
+        const Rsy = Math.round((1 - R.data[1]) * this.HHEIGHT);
+
+        // Corners of a boundins square
+        const Tp = Math.max(Math.min(Psy, Qsy, Rsy), 0);
+        const Bp = Math.min(Math.max(Psy, Qsy, Rsy), this.HEIGHT);
+        const Lp = Math.max(Math.min(Psx, Qsx, Rsx), 0);
+        const Rp = Math.min(Math.max(Psx, Qsx, Rsx), this.WIDTH);
+
+        const Pa = pColor.a;
+        const Qa = qColor.a;
+        const Ra = rColor.a;
+        const pNormColor = {
+            r: pColor.r / 255,
+            g: pColor.g / 255,
+            b: pColor.b / 255,
+        };
+
+        const qNormColor = {
+            r: qColor.r / 255,
+            g: qColor.g / 255,
+            b: qColor.b / 255,
+        };
+
+        const rNormColor = {
+            r: rColor.r / 255,
+            g: rColor.g / 255,
+            b: rColor.b / 255,
+        };
+
+        // Ambient light
+        const pLitColor = {
+            a: Pa,
+            r: pNormColor.r * this._ambientLight.r,
+            g: pNormColor.g * this._ambientLight.g,
+            b: pNormColor.b * this._ambientLight.b,
+        }
+
+        const qLitColor = {
+            a: Qa,
+            r: qNormColor.r * this._ambientLight.r,
+            g: qNormColor.g * this._ambientLight.g,
+            b: qNormColor.b * this._ambientLight.b,
+        };
+
+        const rLitColor = {
+            a: Ra,
+            r: rNormColor.r * this._ambientLight.r,
+            g: rNormColor.g * this._ambientLight.g,
+            b: rNormColor.b * this._ambientLight.b,
+        };
+
+        for (let l of lightPositions) {
+            let pLdir = I3DXMatrixSubtract(pCam, l.pos) as I3DXVec;
+            const pLdist = I3DXVectorLength(pLdir);
+            pLdir = I3DXMatrixScale(pLdir, 1/pLdist) as I3DXVec;
+            const pLambert = Math.max(I3DXVectorDot(I3DXVector3(pLdir.data[0], pLdir.data[1], pLdir.data[2]), nCam), 0);
+            const pAtten = l.light.atten0 + l.light.atten1 * pLdist + l.light.atten2 * pLdist * pLdist;
+
+            pLitColor.r += pNormColor.r * l.light.diffuse!.r * pLambert * 1.0 / pAtten;
+            pLitColor.g += pNormColor.g * l.light.diffuse!.g * pLambert * 1.0 / pAtten;
+            pLitColor.b += pNormColor.b * l.light.diffuse!.b * pLambert * 1.0 / pAtten;
+
+            let qLdir = I3DXMatrixSubtract(qCam, l.pos) as I3DXVec;
+            const qLdist = I3DXVectorLength(qLdir);
+            qLdir = I3DXMatrixScale(qLdir, 1/qLdist) as I3DXVec;
+            const qLambert = Math.max(I3DXVectorDot(I3DXVector3(qLdir.data[0], qLdir.data[1], qLdir.data[2]), nCam), 0);
+            const qAtten = l.light.atten0 + l.light.atten1 * qLdist + l.light.atten2 * qLdist * qLdist;
+
+            qLitColor.r += qNormColor.r * l.light.diffuse!.r * qLambert * 1.0 / qAtten;
+            qLitColor.g += qNormColor.g * l.light.diffuse!.g * qLambert * 1.0 / qAtten;
+            qLitColor.b += qNormColor.b * l.light.diffuse!.b * qLambert * 1.0 / qAtten;
+
+            let rLdir = I3DXMatrixSubtract(rCam, l.pos) as I3DXVec;
+            const rLdist = I3DXVectorLength(rLdir);
+            rLdir = I3DXMatrixScale(rLdir, 1/rLdist) as I3DXVec;
+            const rLambert = Math.max(I3DXVectorDot(I3DXVector3(rLdir.data[0], rLdir.data[1], rLdir.data[2]), nCam), 0);
+            const rAtten = l.light.atten0 + l.light.atten1 * rLdist + l.light.atten2 * rLdist * rLdist;
+
+            rLitColor.r += rNormColor.r * l.light.diffuse!.r * rLambert * 1.0 / rAtten;
+            rLitColor.g += rNormColor.g * l.light.diffuse!.g * rLambert * 1.0 / rAtten;
+            rLitColor.b += rNormColor.b * l.light.diffuse!.b * rLambert * 1.0 / rAtten;
+
+        }
+
+        pLitColor.r = Math.min(pLitColor.r, 1.0) * 255;
+        pLitColor.g = Math.min(pLitColor.g, 1.0) * 255;
+        pLitColor.b = Math.min(pLitColor.b, 1.0) * 255;
+
+        qLitColor.r = Math.min(qLitColor.r, 1.0) * 255;
+        qLitColor.g = Math.min(qLitColor.g, 1.0) * 255;
+        qLitColor.b = Math.min(qLitColor.b, 1.0) * 255;
+
+        rLitColor.r = Math.min(rLitColor.r, 1.0) * 255;
+        rLitColor.g = Math.min(rLitColor.g, 1.0) * 255;
+        rLitColor.b = Math.min(rLitColor.b, 1.0) * 255;
+
+        // Calculate light colors and convert to L*a*b*
+        const PLab = ColorToLab(pLitColor);
+        const QLab = ColorToLab(qLitColor);
+        const RLab = ColorToLab(rLitColor);
+
+        // x and y here are literally pixel coordinates
+        for (let y = Tp; y <= Bp; y++) {
+            for (let x = Lp; x <= Rp; x++) {
+                // convert x and y back to perspective space
+                const px = 1 - x / this.HWIDTH;
+                const py = 1 - y / this.HHEIGHT;
+                const sOrigin = I3DXVector3(px, py, 0);
+
+                // Depth at intersection with plane of the triangle
+                const z = (d - I3DXVectorDot(N, sOrigin)) / dN;
+                const O = I3DXVector3(px, py, z);
+
+                if (!(
+                    I3DXVectorDot(I3DXVectorCross(QP, I3DXMatrixSubtract(O, P) as I3DXVec), N) >= 0 &&
+                    I3DXVectorDot(I3DXVectorCross(RQ, I3DXMatrixSubtract(O, Q) as I3DXVec), N) >= 0 &&
+                    I3DXVectorDot(I3DXVectorCross(PR, I3DXMatrixSubtract(O, R) as I3DXVec), N) >= 0
+                )) {
+                    continue;
+                }
+
+                const [Wp, Wq, Wr] = I3DXBarycentricCoords(px, py, P.x, P.y, Q.x, Q.y, R.x, R.y);
+
+                const L = PLab[0] * Wp + QLab[0] * Wq + RLab[0] * Wr;
+                const a = PLab[1] * Wp + QLab[1] * Wq + RLab[1] * Wr;
+                const b = PLab[2] * Wp + QLab[2] * Wq + RLab[2] * Wr;
+                const { r: vr, g: vg, b: vb } = LabToColor(L, a, b);
+
+                const c = pack(
+                    Math.round(Pa * Wp + Qa * Wq + Ra * Wr),
+                    vr,
+                    vg,
+                    vb,
+                );
+                this.ZBufferSet(x, y, c, z);
+            }
+        }
+    }
+
+    DrawPrimitive(mode: I3DXPrimitiveTopologyType, list: I3DXVertex[]) {
+        const transformCamera = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
+        const transform = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], transformCamera);
 
         switch(mode) {
             case I3DPT_POINTLIST:
@@ -271,191 +452,16 @@ export class I3DXDevice {
                         k = m + 2;
                         m++;
                     }
-                    const pCam = I3DXMatrixMultiply(transformCamera, list[i].coordinates);
-                    const qCam = I3DXMatrixMultiply(transformCamera, list[j].coordinates);
-                    const rCam = I3DXMatrixMultiply(transformCamera, list[k].coordinates);
-                    const nCam = I3DXVectorUnit(I3DXVectorCross(
-                        I3DXMatrixSubtract(qCam, pCam) as I3DXVec,
-                        I3DXMatrixSubtract(rCam, pCam) as I3DXVec,
-                    ));
+
+                    const pCam = I3DXMatrixMultiply(transformCamera, list[i].coordinates) as I3DXVec;
+                    const qCam = I3DXMatrixMultiply(transformCamera, list[j].coordinates) as I3DXVec;
+                    const rCam = I3DXMatrixMultiply(transformCamera, list[k].coordinates) as I3DXVec;
 
                     const pColor = list[i].color;
                     const qColor = list[j].color;
                     const rColor = list[k].color;
 
-                    const p = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], pCam);
-                    const q = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], qCam);
-                    const r = I3DXMatrixMultiply(this._transforms[I3DTS_PROJECTION], rCam);
-
-                    const P = I3DXVector3(p.data[0] / p.data[3],
-                                          p.data[1] / p.data[3],
-                                          p.data[2] / p.data[3]);
-                    const Q = I3DXVector3(q.data[0] / q.data[3],
-                                          q.data[1] / q.data[3],
-                                          q.data[2] / q.data[3]);
-                    const R = I3DXVector3(r.data[0] / r.data[3],
-                                          r.data[1] / r.data[3],
-                                          r.data[2] / r.data[3]);
-
-
-                    const QP = I3DXMatrixSubtract(Q, P) as I3DXVec;
-                    const RP = I3DXMatrixSubtract(R, P) as I3DXVec;
-                    const RQ = I3DXMatrixSubtract(R, Q) as I3DXVec;
-                    const PR = I3DXMatrixSubtract(P, R) as I3DXVec;
-                    const N = I3DXVectorUnit(I3DXVectorCross(QP, RP));
-
-                    // the final parameter to the equation of the plane
-                    const d = I3DXVectorDot(screenNormal, P);
-
-                    const dN = I3DXVectorDot(N, screenNormal);
-                    // if dN === 0, the triangle _should_ be parallel to the ray
-                    if (dN <= 0) {
-                      continue;
-                    }
-
-                    // Scaled coordinates
-                    const Psx = Math.round((1 - P.data[0]) * this.HWIDTH);
-                    const Psy = Math.round((1 - P.data[1]) * this.HHEIGHT);
-                    const Qsx = Math.round((1 - Q.data[0]) * this.HWIDTH);
-                    const Qsy = Math.round((1 - Q.data[1]) * this.HHEIGHT);
-                    const Rsx = Math.round((1 - R.data[0]) * this.HWIDTH);
-                    const Rsy = Math.round((1 - R.data[1]) * this.HHEIGHT);
-
-                    // Corners of a boundins square
-                    const Tp = Math.max(Math.min(Psy, Qsy, Rsy), 0);
-                    const Bp = Math.min(Math.max(Psy, Qsy, Rsy), this.HEIGHT);
-                    const Lp = Math.max(Math.min(Psx, Qsx, Rsx), 0);
-                    const Rp = Math.min(Math.max(Psx, Qsx, Rsx), this.WIDTH);
-
-                    const Pa = pColor.a;
-                    const Qa = qColor.a;
-                    const Ra = rColor.a;
-                    const pNormColor = {
-                        r: pColor.r / 255,
-                        g: pColor.g / 255,
-                        b: pColor.b / 255,
-                    };
-
-                    const qNormColor = {
-                        r: qColor.r / 255,
-                        g: qColor.g / 255,
-                        b: qColor.b / 255,
-                    };
-
-                    const rNormColor = {
-                        r: rColor.r / 255,
-                        g: rColor.g / 255,
-                        b: rColor.b / 255,
-                    };
-
-                    // Ambient light
-                    const pLitColor = {
-                        a: Pa,
-                        r: pNormColor.r * this._ambientLight.r,
-                        g: pNormColor.g * this._ambientLight.g,
-                        b: pNormColor.b * this._ambientLight.b,
-                    }
-
-                    const qLitColor = {
-                        a: Qa,
-                        r: qNormColor.r * this._ambientLight.r,
-                        g: qNormColor.g * this._ambientLight.g,
-                        b: qNormColor.b * this._ambientLight.b,
-                    };
-
-                    const rLitColor = {
-                        a: Ra,
-                        r: rNormColor.r * this._ambientLight.r,
-                        g: rNormColor.g * this._ambientLight.g,
-                        b: rNormColor.b * this._ambientLight.b,
-                    };
-
-                    for (let l of lightPositions) {
-                        let pLdir = I3DXMatrixSubtract(pCam, l.pos) as I3DXVec;
-                        const pLdist = I3DXVectorLength(pLdir);
-                        pLdir = I3DXMatrixScale(pLdir, 1/pLdist) as I3DXVec;
-                        const pLambert = Math.max(I3DXVectorDot(I3DXVector3(pLdir.data[0], pLdir.data[1], pLdir.data[2]), nCam), 0);
-                        const pAtten = l.light.atten0 + l.light.atten1 * pLdist + l.light.atten2 * pLdist * pLdist;
-                        
-                        pLitColor.r += pNormColor.r * l.light.diffuse!.r * pLambert * 1.0 / pAtten;
-                        pLitColor.g += pNormColor.g * l.light.diffuse!.g * pLambert * 1.0 / pAtten;
-                        pLitColor.b += pNormColor.b * l.light.diffuse!.b * pLambert * 1.0 / pAtten;
-
-                        let qLdir = I3DXMatrixSubtract(qCam, l.pos) as I3DXVec;
-                        const qLdist = I3DXVectorLength(qLdir);
-                        qLdir = I3DXMatrixScale(qLdir, 1/qLdist) as I3DXVec;
-                        const qLambert = Math.max(I3DXVectorDot(I3DXVector3(qLdir.data[0], qLdir.data[1], qLdir.data[2]), nCam), 0);
-                        const qAtten = l.light.atten0 + l.light.atten1 * qLdist + l.light.atten2 * qLdist * qLdist;
-
-                        qLitColor.r += qNormColor.r * l.light.diffuse!.r * qLambert * 1.0 / qAtten;
-                        qLitColor.g += qNormColor.g * l.light.diffuse!.g * qLambert * 1.0 / qAtten;
-                        qLitColor.b += qNormColor.b * l.light.diffuse!.b * qLambert * 1.0 / qAtten;
-
-                        let rLdir = I3DXMatrixSubtract(rCam, l.pos) as I3DXVec;
-                        const rLdist = I3DXVectorLength(rLdir);
-                        rLdir = I3DXMatrixScale(rLdir, 1/rLdist) as I3DXVec;
-                        const rLambert = Math.max(I3DXVectorDot(I3DXVector3(rLdir.data[0], rLdir.data[1], rLdir.data[2]), nCam), 0);
-                        const rAtten = l.light.atten0 + l.light.atten1 * rLdist + l.light.atten2 * rLdist * rLdist;
-
-                        rLitColor.r += rNormColor.r * l.light.diffuse!.r * rLambert * 1.0 / rAtten;
-                        rLitColor.g += rNormColor.g * l.light.diffuse!.g * rLambert * 1.0 / rAtten;
-                        rLitColor.b += rNormColor.b * l.light.diffuse!.b * rLambert * 1.0 / rAtten;
-
-                    }
-
-                    pLitColor.r = Math.min(pLitColor.r, 1.0) * 255;
-                    pLitColor.g = Math.min(pLitColor.g, 1.0) * 255;
-                    pLitColor.b = Math.min(pLitColor.b, 1.0) * 255;
-
-                    qLitColor.r = Math.min(qLitColor.r, 1.0) * 255;
-                    qLitColor.g = Math.min(qLitColor.g, 1.0) * 255;
-                    qLitColor.b = Math.min(qLitColor.b, 1.0) * 255;
-
-                    rLitColor.r = Math.min(rLitColor.r, 1.0) * 255;
-                    rLitColor.g = Math.min(rLitColor.g, 1.0) * 255;
-                    rLitColor.b = Math.min(rLitColor.b, 1.0) * 255;
-
-                    // Calculate light colors and convert to L*a*b*
-                    const PLab = ColorToLab(pLitColor);
-                    const QLab = ColorToLab(qLitColor);
-                    const RLab = ColorToLab(rLitColor);
-
-                    // x and y here are literally pixel coordinates
-                    for (let y = Tp; y <= Bp; y++) {
-                        for (let x = Lp; x <= Rp; x++) {
-                            // convert x and y back to perspective space
-                            const px = 1 - x / this.HWIDTH;
-                            const py = 1 - y / this.HHEIGHT;
-                            const sOrigin = I3DXVector3(px, py, 0);
-
-                            // Depth at intersection with plane of the triangle
-                            const z = (d - I3DXVectorDot(N, sOrigin)) / dN;
-                            const O = I3DXVector3(px, py, z);
-
-                            if (!(
-                                I3DXVectorDot(I3DXVectorCross(QP, I3DXMatrixSubtract(O, P) as I3DXVec), N) >= 0 &&
-                                I3DXVectorDot(I3DXVectorCross(RQ, I3DXMatrixSubtract(O, Q) as I3DXVec), N) >= 0 &&
-                                I3DXVectorDot(I3DXVectorCross(PR, I3DXMatrixSubtract(O, R) as I3DXVec), N) >= 0
-                            )) {
-                                continue;
-                            }
-
-                            const [Wp, Wq, Wr] = I3DXBarycentricCoords(px, py, P.x, P.y, Q.x, Q.y, R.x, R.y);
-
-                            const L = PLab[0] * Wp + QLab[0] * Wq + RLab[0] * Wr;
-                            const a = PLab[1] * Wp + QLab[1] * Wq + RLab[1] * Wr;
-                            const b = PLab[2] * Wp + QLab[2] * Wq + RLab[2] * Wr;
-                            const { r: vr, g: vg, b: vb } = LabToColor(L, a, b);
-
-                            const c = pack(
-                                Math.round(Pa * Wp + Qa * Wq + Ra * Wr),
-                                vr,
-                                vg,
-                                vb,
-                            );
-                            this.ZBufferSet(x, y, c, z);
-                        }
-                    }
+                    this.drawTriangle(pCam, pColor, qCam, qColor, rCam, rColor);
                 }
                 break;
         }
