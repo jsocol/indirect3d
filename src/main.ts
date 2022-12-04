@@ -116,6 +116,32 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
     new I3DXVertex(1, 1, 0, yellow),
   ];
 
+  const ringBuf: I3DVertexBuffer = [
+    new I3DXVertex(-1, 1, 0, yellow), // 0
+    new I3DXVertex(-root2m2, 0, -root2p2, darkyellow), // 1
+    new I3DXVertex(-root2m2, 0, root2p2, darkyellow), // 2
+    new I3DXVertex(-root2o2, 1, -root2o2, yellow), // 3
+    new I3DXVertex(-root2o2, 1, root2o2, yellow), // 4
+    new I3DXVertex(-root2p2, 0, -root2m2, darkyellow), // 5
+    new I3DXVertex(-root2p2, 0, root2m2, darkyellow), // 6
+    new I3DXVertex(0, 1, -1, yellow), // 7
+    new I3DXVertex(0, 1, 1, yellow), // 8
+    new I3DXVertex(1, 1, 0, yellow), // 9
+    new I3DXVertex(root2m2, 0, -root2p2, darkyellow), // 10
+    new I3DXVertex(root2m2, 0, root2p2, darkyellow), // 11
+    new I3DXVertex(root2o2, 1, -root2o2, yellow), // 12
+    new I3DXVertex(root2o2, 1, root2o2, yellow), // 13
+    new I3DXVertex(root2o2, 1, root2o2, yellow), // 14
+    new I3DXVertex(root2p2, 0, -root2m2, darkyellow), // 15
+    new I3DXVertex(root2p2, 0, root2m2, darkyellow), // 16
+  ];
+
+  const ringIdxBuf: I3DIndexBuffer = [
+    9, 16, 14, 11, 8, 2, 4, 6, 0, 5, 3, 1, 7, 10, 12, 15, 9, 
+    16, 13, 16, 9, 15, 12, 10, 7, 1, 3, 5, 0, 6, 4, 2, 8,
+    11, 13, 16, 9,
+  ];
+
   const ringSize = I3DXMatrixMultiply(I3DXScaleMatrix(2, 1, 2), I3DXTranslateMatrix(0, -0.5, 0));
 
   const id = I3DXMatrixIdentity(4);
@@ -269,7 +295,10 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
     i3d.DrawPrimitiveUP(I3DPT_TRIANGLELIST, triLeftBack);
 
     i3d.SetTransform(I3DTS_WORLD, I3DXMatrixMultiply(I3DXRotateXMatrix(idx / 3), ringSize));
-    i3d.DrawPrimitiveUP(I3DPT_TRIANGLESTRIP, ring);
+    // i3d.DrawPrimitiveUP(I3DPT_TRIANGLESTRIP, ring);
+    i3d.SetStreamSource(0, ringBuf);
+    i3d.SetIndices(ringIdxBuf);
+    i3d.DrawIndexedPrimitive(I3DPT_TRIANGLESTRIP, 0, ringIdxBuf.length - 3);
 
     const left = I3DXTranslateMatrix(0, 0, Math.sin(idx / 2));
 

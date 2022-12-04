@@ -519,7 +519,7 @@ export class I3DXDevice {
                         i = m;
                         j = m + 1;
                         k = m + 2;
-                        m += 3;
+                        m += 2;
                     } else if (mode === I3DPT_TRIANGLESTRIP) {
                         i = m;
                         j = m + 1;
@@ -527,7 +527,6 @@ export class I3DXDevice {
                         if (m % 2 === 1) {
                             [j, k] = [k, j]
                         }
-                        m++;
                     } else {
                         i = startIndex;
                         j = m + 1;
