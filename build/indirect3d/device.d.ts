@@ -1,4 +1,4 @@
-import { Color, I3DColor } from './color';
+import { I3DColor } from './color';
 import { I3DXMatrix, I3DXVec } from './matrix';
 import { I3DXVertex } from './geometry';
 import { I3DLight } from './lights';
@@ -51,7 +51,7 @@ export declare class I3DXDevice {
     DrawIndexedPrimitive(mode: I3DXPrimitiveTopologyType, startIndex: number, primCount: number): boolean;
     EndScene(): void;
     Present(): void;
-    protected ZBufferSet(x: number, y: number, color: Color, depth: number): void;
+    protected ZBufferSet(x: number, y: number, color: I3DColor, depth: number): void;
     protected ZBufferClear(): void;
 }
 //# sourceMappingURL=device.d.ts.map

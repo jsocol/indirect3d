@@ -1,18 +1,24 @@
 import {I3DColor} from "./color";
 
-export function clamp(v: number, lo: number, hi: number): number {
-    return Math.max(Math.min(v, hi), lo);
+function clamp(v: number, lo: number = 0, hi: number = 0xff): number {
+    return Math.max(Math.min(Math.round(v * 0xff), hi), lo);
 }
 
-export function pack(a: number, b: number, c: number, d: number): number {
-    return (clamp(a, 0, 255) << 24) | (clamp(b, 0, 255) << 16) | (clamp(c, 0, 255) << 8) | clamp(d, 0, 255);
+export function pack(color: I3DColor): number {
+    return (clamp(color.a) << 24) | (clamp(color.r) << 16) | (clamp(color.g) << 8) | clamp(color.b);
 }
 
-export function unpack(x: number): I3DColor {
-    const a = (x & 0xff000000) >>> 24,
-          r = (x & 0x00ff0000) >>> 16,
-          g = (x & 0x0000ff00) >>> 8,
-          b = (x & 0x000000ff);
+export const UNPACK_INT = 'int';
+export const UNPACK_FLOAT = 'float';
+
+type UnpackMode = typeof UNPACK_INT | typeof UNPACK_FLOAT;
+
+export function unpack(x: number, mode: UnpackMode = UNPACK_FLOAT): I3DColor {
+    const divisor = mode == UNPACK_INT ? 1 : 0xff;
+    const a = ((x & 0xff000000) >>> 24) / divisor,
+          r = ((x & 0x00ff0000) >>> 16) / divisor,
+          g = ((x & 0x0000ff00) >>> 8) / divisor,
+          b = (x & 0x000000ff) / divisor;
     return {a, r, g, b};
 }
 

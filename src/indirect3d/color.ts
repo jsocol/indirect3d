@@ -7,15 +7,15 @@ export type BlueChannel = number;
 export type Color = number;
 
 export interface I3DColor {
-    r: number
-    g: number
-    b: number
-    a: number
+    r: RedChannel
+    g: GreenChanenl
+    b: BlueChannel
+    a: AlphaChannel
 }
 
 export function XRGB(r: RedChannel, g: GreenChanenl, b: BlueChannel): I3DColor {
     return {
-        a: 255,
+        a: 1.0,
         r,
         g,
         b,
@@ -31,29 +31,25 @@ export function ARGB(a: AlphaChannel, r: RedChannel, g: GreenChanenl, b: BlueCha
     };
 }
 
-export function I3DXAlphaBlend(bg: Color, fg: Color): Color {
-    let { a: a0, r: r0, g: g0, b: b0 } = unpack(bg);
-    let { a: a1, r: r1, g: g1, b: b1 } = unpack(fg);
+function clamp(v: number, lo: number = 0, hi: number = 1): number {
+    return Math.max(lo, Math.min(hi, v));
+}
 
-    // src is transparent.
-    if ( a1 === 0 ) {
-      return bg;
+export function I3DXAlphaBlend(bg: I3DColor, fg: I3DColor): I3DColor {
+    if (fg.a === 0) {
+        return bg;
+    }
+    if (bg.a === 0) {
+        return fg;
     }
 
-    // bg is transparent.
-    if ( a0 === 0 ) {
-      return fg;
-    }
-
-    a0 = a0/255;
-    a1 = a1/255;
-    //let a = a0 + a1 *() a0 * a1;
-    let a = a1 + a0 * (1 - a1);
-    const r = Math.round((r1 * a1 + r0 * a0 * (1 - a1))/a);
-    const g = Math.round((g1 * a1 + g0 * a0 * (1 - a1))/a);
-    const b = Math.round((b1 * a1 + b0 * a0 * (1 - a1))/a);
-    a = Math.min(255, Math.round(a * 255));
-    return pack(a, r, g, b);
+    const a = clamp(fg.a + bg.a * (1 - fg.a));
+    return {
+        a,
+        r: clamp((fg.r * fg.a + bg.r * bg.a * (1 - fg.a)) / a),
+        g: clamp((fg.g * fg.a + bg.g * bg.a * (1 - fg.a)) / a),
+        b: clamp((fg.b * fg.a + bg.b * bg.a * (1 - fg.a)) / a),
+    };
 }
 
 export function ColorToLab(color: I3DColor): [number, number, number] {
@@ -71,9 +67,9 @@ export function LabToColor(L: number, a: number, b: number): I3DColor {
 // These conversions come from http://www.easyrgb.com/en/math.php
 
 export function RGBToXYZ(r: number, g: number, b: number): [number, number, number] {
-    let rf = r / 255;
-    let gf = g / 255;
-    let bf = b / 255;
+    let rf = r;
+    let gf = g;
+    let bf = b;
 
     if ( rf > 0.04045 ) {
         rf = Math.pow(((rf + 0.055) / 1.055), 2.4);
@@ -134,9 +130,9 @@ export function XYZToRGB(x: number, y: number, z: number): [number, number, numb
     }
 
     return [
-        Math.min(Math.max(Math.round(vr * 255), 0), 255),
-        Math.min(Math.max(Math.round(vg * 255), 0), 255),
-        Math.min(Math.max(Math.round(vb * 255), 0), 255),
+        Math.min(Math.max(vr, 0.0), 1.0),
+        Math.min(Math.max(vg, 0.0), 1.0),
+        Math.min(Math.max(vb, 0.0), 1.0),
     ];
 }
 

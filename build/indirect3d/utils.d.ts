@@ -1,6 +1,9 @@
 import { I3DColor } from "./color";
-export declare function clamp(v: number, lo: number, hi: number): number;
-export declare function pack(a: number, b: number, c: number, d: number): number;
-export declare function unpack(x: number): I3DColor;
+export declare function pack(color: I3DColor): number;
+export declare const UNPACK_INT = "int";
+export declare const UNPACK_FLOAT = "float";
+declare type UnpackMode = typeof UNPACK_INT | typeof UNPACK_FLOAT;
+export declare function unpack(x: number, mode?: UnpackMode): I3DColor;
 export declare function sqr(i: number): number;
+export {};
 //# sourceMappingURL=utils.d.ts.map

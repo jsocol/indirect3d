@@ -60,25 +60,25 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
   const blueDepthInput = document.getElementById('blue-depth-input')! as HTMLInputElement;
 
   const fixedTriangle = [
-    new I3DXVertex(-2.5, -3.0, 0.0, ARGB(0xff,0xff,0,0)),
-    new I3DXVertex(0.0, 3.0, 0.0, ARGB(0xff,0,0xff,0)),
-    new I3DXVertex(2.5, -3.0, 0.0, ARGB(0xff,0,0,0xff)),
+    new I3DXVertex(-2.5, -3.0, 0.0, ARGB(1.0,1.0,0,0)),
+    new I3DXVertex(0.0, 3.0, 0.0, ARGB(1.0,0,1.0,0)),
+    new I3DXVertex(2.5, -3.0, 0.0, ARGB(1.0,0,0,1.0)),
   ];
 
   const pyramidBuffer: I3DVertexBuffer = [
-    new I3DXVertex(0, 1, 0, XRGB(0xff, 0xff, 0xff)),
-    new I3DXVertex(-1, 0, 0, XRGB(0xff, 0x40, 0x40)),
-    new I3DXVertex(0, 0, -1, XRGB(0xff, 0xff, 0x40)),
-    new I3DXVertex(1, 0, 0, XRGB(0x40, 0x40, 0xff)),
-    new I3DXVertex(0, 0, 1, XRGB(0x40, 0xff, 0x40)),
+    new I3DXVertex(0, 1, 0, XRGB(1.0, 1.0, 1.0)),
+    new I3DXVertex(-1, 0, 0, XRGB(1.0, 0.25, 0.25)),
+    new I3DXVertex(0, 0, -1, XRGB(1.0, 1.0, 0.25)),
+    new I3DXVertex(1, 0, 0, XRGB(0.25, 0.25, 1.0)),
+    new I3DXVertex(0, 0, 1, XRGB(0.25, 1.0, 0.25)),
   ];
 
   const pyramidIndexBuffer: I3DIndexBuffer = [
     0, 1, 2, 3, 4, 1,
   ];
 
-  const ring1 = ARGB(0xff, 0xff, 0xff, 0xff);
-  const ring2 = ARGB(0xff, 0xc0, 0x8f, 0x40);
+  const ring1 = ARGB(1.0, 1.0, 1.0, 1.0);
+  const ring2 = ARGB(1.0, 0.75, 0.56, 0.25);
   const root2o2 = Math.sqrt(2) / 2;
   const root2m2 = Math.sqrt(2 - Math.sqrt(2)) / 2;
   const root2p2 = Math.sqrt(2 + Math.sqrt(2)) / 2;
@@ -154,15 +154,15 @@ import {I3DLight, I3DLightType} from './indirect3d/lights';
   const vUp = I3DXVector3(0, 1, 0);
 
   const triLeftFront = [
-    new I3DXVertex(0, 0, 0, ARGB(0x80, 0, 0, 0xff)),
-    new I3DXVertex(1, 1, 0, ARGB(0x80, 0, 0, 0xff)),
-    new I3DXVertex(2, 0, 0, ARGB(0x80, 0, 0, 0xff)),
+    new I3DXVertex(0, 0, 0, ARGB(0.5, 0, 0, 1.0)),
+    new I3DXVertex(1, 1, 0, ARGB(0.5, 0, 0, 1.0)),
+    new I3DXVertex(2, 0, 0, ARGB(0.5, 0, 0, 1.0)),
   ];
 
   const triLeftBack = [
-    new I3DXVertex(0, 0, 0, XRGB(0xff, 0, 0)),
-    new I3DXVertex(1, 1, 0, XRGB(0xff, 0, 0)),
-    new I3DXVertex(2, 0, 0, XRGB(0xff, 0, 0)),
+    new I3DXVertex(0, 0, 0, XRGB(1.0, 0, 0)),
+    new I3DXVertex(1, 1, 0, XRGB(1.0, 0, 0)),
+    new I3DXVertex(2, 0, 0, XRGB(1.0, 0, 0)),
   ];
 
   let facing = I3DXVector(4, [0, 0, -1, 0]);

@@ -1,4 +1,4 @@
-import { pack, unpack } from './utils';
+import { pack, unpack, UNPACK_INT } from './utils';
 import { Color, ColorToLab, I3DXAlphaBlend, LabToColor, I3DColor, XRGB } from './color';
 import {
     I3DXMatrix,
@@ -24,7 +24,7 @@ import {
 import {I3DLight, I3DLightType} from './lights';
 import {I3DIndexBuffer, I3DVertexBuffer} from './buffers';
 
-const WHITE = XRGB(0xff, 0xff, 0xff);
+const WHITE = XRGB(1.0, 1.0, 1.0);
 
 export const I3DTS_WORLD = 'world';
 export const I3DTS_VIEW = 'view';
@@ -147,7 +147,7 @@ export class I3DXDevice {
             r = r * this._ambientLight.r;
             g = g * this._ambientLight.g;
             b = b * this._ambientLight.b;
-            this.ZBufferSet(sx, sy, pack(a, r, g, b), bz);
+            this.ZBufferSet(sx, sy, {a, r, g, b}, bz);
         }
     }
 
@@ -172,13 +172,13 @@ export class I3DXDevice {
         const dg = g1 - g0;
         const db = b1 - b0;
 
-        const color = (distance: number): Color => {
-            return pack(
-                Math.round(da * distance + a0),
-                Math.round(dr * distance + r0),
-                Math.round(dg * distance + g0),
-                Math.round(db * distance + b0),
-            );
+        const color = (distance: number): I3DColor => {
+            return {
+                a: da * distance + a0,
+                r: dr * distance + r0,
+                g: dg * distance + g0,
+                b: db * distance + b0,
+            };
         };
 
         // Given a distance from 0 to 1 along a line segment
@@ -290,21 +290,21 @@ export class I3DXDevice {
         const Qa = qColor.a;
         const Ra = rColor.a;
         const pNormColor = {
-            r: pColor.r / 255,
-            g: pColor.g / 255,
-            b: pColor.b / 255,
+            r: pColor.r,
+            g: pColor.g,
+            b: pColor.b,
         };
 
         const qNormColor = {
-            r: qColor.r / 255,
-            g: qColor.g / 255,
-            b: qColor.b / 255,
+            r: qColor.r,
+            g: qColor.g,
+            b: qColor.b,
         };
 
         const rNormColor = {
-            r: rColor.r / 255,
-            g: rColor.g / 255,
-            b: rColor.b / 255,
+            r: rColor.r,
+            g: rColor.g,
+            b: rColor.b,
         };
 
         // Ambient light
@@ -377,17 +377,17 @@ export class I3DXDevice {
 
         }
 
-        pLitColor.r = Math.min(pLitColor.r, 1.0) * 255;
-        pLitColor.g = Math.min(pLitColor.g, 1.0) * 255;
-        pLitColor.b = Math.min(pLitColor.b, 1.0) * 255;
+        pLitColor.r = Math.min(pLitColor.r, 1.0);
+        pLitColor.g = Math.min(pLitColor.g, 1.0);
+        pLitColor.b = Math.min(pLitColor.b, 1.0);
 
-        qLitColor.r = Math.min(qLitColor.r, 1.0) * 255;
-        qLitColor.g = Math.min(qLitColor.g, 1.0) * 255;
-        qLitColor.b = Math.min(qLitColor.b, 1.0) * 255;
+        qLitColor.r = Math.min(qLitColor.r, 1.0);
+        qLitColor.g = Math.min(qLitColor.g, 1.0);
+        qLitColor.b = Math.min(qLitColor.b, 1.0);
 
-        rLitColor.r = Math.min(rLitColor.r, 1.0) * 255;
-        rLitColor.g = Math.min(rLitColor.g, 1.0) * 255;
-        rLitColor.b = Math.min(rLitColor.b, 1.0) * 255;
+        rLitColor.r = Math.min(rLitColor.r, 1.0);
+        rLitColor.g = Math.min(rLitColor.g, 1.0);
+        rLitColor.b = Math.min(rLitColor.b, 1.0);
 
         // Calculate light colors and convert to L*a*b*
         const PLab = ColorToLab(pLitColor);
@@ -421,12 +421,12 @@ export class I3DXDevice {
                 const b = PLab[2] * Wp + QLab[2] * Wq + RLab[2] * Wr;
                 const { r: vr, g: vg, b: vb } = LabToColor(L, a, b);
 
-                const c = pack(
-                    Math.round(Pa * Wp + Qa * Wq + Ra * Wr),
-                    vr,
-                    vg,
-                    vb,
-                );
+                const c = {
+                    a: Math.round(Pa * Wp + Qa * Wq + Ra * Wr),
+                    r: vr,
+                    g: vg,
+                    b: vb,
+                };
                 this.ZBufferSet(x, y, c, z);
             }
         }
@@ -589,7 +589,7 @@ export class I3DXDevice {
     EndScene() {
         const max = this.WIDTH * this.HEIGHT * 4;
         for (let i = 0; i < max; ) {
-            const { a, r, g, b } = unpack(this._zbufferData[i/4]);
+            const { a, r, g, b } = unpack(this._zbufferData[i/4], UNPACK_INT);
             this._backBuffer.data[i++] = r;
             this._backBuffer.data[i++] = g;
             this._backBuffer.data[i++] = b;
@@ -601,31 +601,31 @@ export class I3DXDevice {
         this._ctx.putImageData(this._backBuffer, 0, 0);
     }
 
-    protected ZBufferSet(x: number, y: number, color: Color, depth: number) {
+    protected ZBufferSet(x: number, y: number, color: I3DColor, depth: number) {
         const idx = this.WIDTH * (y - 1) + x;
         const zdepth = this._zbufferDepth[idx];
-        const zcolor = this._zbufferData[idx];
+        const zcolor = unpack(this._zbufferData[idx]);
 
         // Current pixel is solid and closer
-        const { a: za } = unpack(zcolor);
-        if (za >= 255 && zdepth < depth) {
+        const za = zcolor.a;
+        if (za >= 1.0 && zdepth < depth) {
             return;
         }
 
         // New pixel is solid, or no current color
-        const { a } = unpack(color);
+        const { a } = color;
 
-        if ((a >= 255 && depth < zdepth) || za === 0) {
-            this._zbufferData[idx] = color;
+        if ((a >= 1.0 && depth < zdepth) || za === 0) {
+            this._zbufferData[idx] = pack(color);
             this._zbufferDepth[idx] = depth;
             return;
         }
 
         // Nothing solid, blend 'em
         if (depth > zdepth) {
-          this._zbufferData[idx] = I3DXAlphaBlend(color, zcolor);
+          this._zbufferData[idx] = pack(I3DXAlphaBlend(color, zcolor));
         } else {
-          this._zbufferData[idx] = I3DXAlphaBlend(zcolor, color);
+          this._zbufferData[idx] = pack(I3DXAlphaBlend(zcolor, color));
         }
 
         // Which is closer
