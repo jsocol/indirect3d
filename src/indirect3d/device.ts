@@ -226,11 +226,10 @@ export class I3DXDevice {
             pos: I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], l.light.position!),
         }));
 
-        const wvMatrix = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], this._transforms[I3DTS_WORLD]);
         const directionalLights = this._lights.filter((l) => l.enabled && l.light.type === I3DLightType.Directional).map((l) => {
             const light = l.light;
             const lDir = I3DXVector(4, [light.direction!.x, light.direction!.y, light.direction!.z, 0])
-            const camDir = I3DXMatrixMultiply(wvMatrix, lDir).toColVec();
+            const camDir = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], lDir).toColVec();
             const ret = {
                 light,
                 camDir: I3DXVectorUnit(I3DXVector3(camDir.x, camDir.y, camDir.z)),
