@@ -289,59 +289,41 @@ export class I3DXDevice {
         const Pa = pColor.a;
         const Qa = qColor.a;
         const Ra = rColor.a;
-        const pNormColor = {
-            r: pColor.r,
-            g: pColor.g,
-            b: pColor.b,
-        };
-
-        const qNormColor = {
-            r: qColor.r,
-            g: qColor.g,
-            b: qColor.b,
-        };
-
-        const rNormColor = {
-            r: rColor.r,
-            g: rColor.g,
-            b: rColor.b,
-        };
-
         // Ambient light
         const pLitColor = {
             a: Pa,
-            r: pNormColor.r * this._ambientLight.r,
-            g: pNormColor.g * this._ambientLight.g,
-            b: pNormColor.b * this._ambientLight.b,
+            r: pColor.r * this._ambientLight.r,
+            g: pColor.g * this._ambientLight.g,
+            b: pColor.b * this._ambientLight.b,
         }
 
         const qLitColor = {
             a: Qa,
-            r: qNormColor.r * this._ambientLight.r,
-            g: qNormColor.g * this._ambientLight.g,
-            b: qNormColor.b * this._ambientLight.b,
+            r: qColor.r * this._ambientLight.r,
+            g: qColor.g * this._ambientLight.g,
+            b: qColor.b * this._ambientLight.b,
         };
 
         const rLitColor = {
             a: Ra,
-            r: rNormColor.r * this._ambientLight.r,
-            g: rNormColor.g * this._ambientLight.g,
-            b: rNormColor.b * this._ambientLight.b,
+            r: rColor.r * this._ambientLight.r,
+            g: rColor.g * this._ambientLight.g,
+            b: rColor.b * this._ambientLight.b,
         };
 
         for (let l of directionalLights) {
             const lambert = Math.max(I3DXVectorDot(l.camDir, nCam), 0);
-            pLitColor.r += pNormColor.r * l.light.diffuse!.r * lambert;
-            pLitColor.g += pNormColor.g * l.light.diffuse!.g * lambert;
-            pLitColor.b += pNormColor.b * l.light.diffuse!.b * lambert;
+            pLitColor.r += pColor.r * l.light.diffuse!.r * lambert;
+            pLitColor.g += pColor.g * l.light.diffuse!.g * lambert;
+            pLitColor.b += pColor.b * l.light.diffuse!.b * lambert;
 
-            qLitColor.r += qNormColor.r * l.light.diffuse!.r * lambert;
-            qLitColor.g += qNormColor.g * l.light.diffuse!.g * lambert;
-            qLitColor.b += qNormColor.b * l.light.diffuse!.b * lambert;
+            qLitColor.r += qColor.r * l.light.diffuse!.r * lambert;
+            qLitColor.g += qColor.g * l.light.diffuse!.g * lambert;
+            qLitColor.b += qColor.b * l.light.diffuse!.b * lambert;
 
-            rLitColor.r += rNormColor.r * l.light.diffuse!.r * lambert;
-            rLitColor.g += rNormColor.g * l.light.diffuse!.g * lambert;
-            rLitColor.b += rNormColor.b * l.light.diffuse!.b * lambert;
+            rLitColor.r += rColor.r * l.light.diffuse!.r * lambert;
+            rLitColor.g += rColor.g * l.light.diffuse!.g * lambert;
+            rLitColor.b += rColor.b * l.light.diffuse!.b * lambert;
         }
 
         for (let l of pointLights) {
@@ -351,9 +333,9 @@ export class I3DXDevice {
             const pLambert = Math.max(I3DXVectorDot(I3DXVector3(pLdir.data[0], pLdir.data[1], pLdir.data[2]), nCam), 0);
             const pAtten = l.light.atten0 + l.light.atten1 * pLdist + l.light.atten2 * pLdist * pLdist;
 
-            pLitColor.r += pNormColor.r * l.light.diffuse!.r * pLambert * 1.0 / pAtten;
-            pLitColor.g += pNormColor.g * l.light.diffuse!.g * pLambert * 1.0 / pAtten;
-            pLitColor.b += pNormColor.b * l.light.diffuse!.b * pLambert * 1.0 / pAtten;
+            pLitColor.r += pColor.r * l.light.diffuse!.r * pLambert * 1.0 / pAtten;
+            pLitColor.g += pColor.g * l.light.diffuse!.g * pLambert * 1.0 / pAtten;
+            pLitColor.b += pColor.b * l.light.diffuse!.b * pLambert * 1.0 / pAtten;
 
             let qLdir = I3DXMatrixSubtract(qCam, l.pos) as I3DXVec;
             const qLdist = I3DXVectorLength(qLdir);
@@ -361,9 +343,9 @@ export class I3DXDevice {
             const qLambert = Math.max(I3DXVectorDot(I3DXVector3(qLdir.data[0], qLdir.data[1], qLdir.data[2]), nCam), 0);
             const qAtten = l.light.atten0 + l.light.atten1 * qLdist + l.light.atten2 * qLdist * qLdist;
 
-            qLitColor.r += qNormColor.r * l.light.diffuse!.r * qLambert * 1.0 / qAtten;
-            qLitColor.g += qNormColor.g * l.light.diffuse!.g * qLambert * 1.0 / qAtten;
-            qLitColor.b += qNormColor.b * l.light.diffuse!.b * qLambert * 1.0 / qAtten;
+            qLitColor.r += qColor.r * l.light.diffuse!.r * qLambert * 1.0 / qAtten;
+            qLitColor.g += qColor.g * l.light.diffuse!.g * qLambert * 1.0 / qAtten;
+            qLitColor.b += qColor.b * l.light.diffuse!.b * qLambert * 1.0 / qAtten;
 
             let rLdir = I3DXMatrixSubtract(rCam, l.pos) as I3DXVec;
             const rLdist = I3DXVectorLength(rLdir);
@@ -371,9 +353,9 @@ export class I3DXDevice {
             const rLambert = Math.max(I3DXVectorDot(I3DXVector3(rLdir.data[0], rLdir.data[1], rLdir.data[2]), nCam), 0);
             const rAtten = l.light.atten0 + l.light.atten1 * rLdist + l.light.atten2 * rLdist * rLdist;
 
-            rLitColor.r += rNormColor.r * l.light.diffuse!.r * rLambert * 1.0 / rAtten;
-            rLitColor.g += rNormColor.g * l.light.diffuse!.g * rLambert * 1.0 / rAtten;
-            rLitColor.b += rNormColor.b * l.light.diffuse!.b * rLambert * 1.0 / rAtten;
+            rLitColor.r += rColor.r * l.light.diffuse!.r * rLambert * 1.0 / rAtten;
+            rLitColor.g += rColor.g * l.light.diffuse!.g * rLambert * 1.0 / rAtten;
+            rLitColor.b += rColor.b * l.light.diffuse!.b * rLambert * 1.0 / rAtten;
 
         }
 
