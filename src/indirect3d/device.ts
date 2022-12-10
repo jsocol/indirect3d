@@ -226,17 +226,6 @@ export class I3DXDevice {
             pos: I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], l.light.position!),
         }));
 
-        const directionalLights = this._lights.filter((l) => l.enabled && l.light.type === I3DLightType.Directional).map((l) => {
-            const light = l.light;
-            const lDir = I3DXVector(4, [light.direction!.x, light.direction!.y, light.direction!.z, 0])
-            const camDir = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], lDir).toColVec();
-            const ret = {
-                light,
-                camDir: I3DXVectorUnit(I3DXVector3(camDir.x, camDir.y, camDir.z)),
-            };
-            return ret;
-        });
-
         const nCam = I3DXVectorUnit(I3DXVectorCross(
             I3DXMatrixSubtract(qCam, pCam) as I3DXVec,
             I3DXMatrixSubtract(rCam, pCam) as I3DXVec,
@@ -311,52 +300,67 @@ export class I3DXDevice {
             b: rColor.b * this._ambientLight.b,
         };
 
-        for (let l of directionalLights) {
-            const lambert = Math.max(I3DXVectorDot(l.camDir, nCam), 0);
-            pLitColor.r += pColor.r * l.light.diffuse!.r * lambert;
-            pLitColor.g += pColor.g * l.light.diffuse!.g * lambert;
-            pLitColor.b += pColor.b * l.light.diffuse!.b * lambert;
+        for (let l of this._lights) {
+            if (!l.enabled) { continue; }
+            switch (l.light.type) {
+                case I3DLightType.Directional:
+                    const lDir = I3DXVector(4, [l.light.direction!.x, l.light.direction!.y, l.light.direction!.z, 0])
+                    let camDir = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], lDir).toColVec();
+                    camDir = I3DXVectorUnit(I3DXVector3(camDir.x, camDir.y, camDir.z));
 
-            qLitColor.r += qColor.r * l.light.diffuse!.r * lambert;
-            qLitColor.g += qColor.g * l.light.diffuse!.g * lambert;
-            qLitColor.b += qColor.b * l.light.diffuse!.b * lambert;
+                    if (l.light.diffuse) {
+                        const lambert = Math.max(I3DXVectorDot(camDir, nCam), 0);
+                        pLitColor.r += pColor.r * l.light.diffuse.r * lambert;
+                        pLitColor.g += pColor.g * l.light.diffuse.g * lambert;
+                        pLitColor.b += pColor.b * l.light.diffuse.b * lambert;
 
-            rLitColor.r += rColor.r * l.light.diffuse!.r * lambert;
-            rLitColor.g += rColor.g * l.light.diffuse!.g * lambert;
-            rLitColor.b += rColor.b * l.light.diffuse!.b * lambert;
-        }
+                        qLitColor.r += qColor.r * l.light.diffuse.r * lambert;
+                        qLitColor.g += qColor.g * l.light.diffuse.g * lambert;
+                        qLitColor.b += qColor.b * l.light.diffuse.b * lambert;
 
-        for (let l of pointLights) {
-            let pLdir = I3DXMatrixSubtract(pCam, l.pos) as I3DXVec;
-            const pLdist = I3DXVectorLength(pLdir);
-            pLdir = I3DXMatrixScale(pLdir, 1/pLdist) as I3DXVec;
-            const pLambert = Math.max(I3DXVectorDot(I3DXVector3(pLdir.data[0], pLdir.data[1], pLdir.data[2]), nCam), 0);
-            const pAtten = l.light.atten0 + l.light.atten1 * pLdist + l.light.atten2 * pLdist * pLdist;
+                        rLitColor.r += rColor.r * l.light.diffuse.r * lambert;
+                        rLitColor.g += rColor.g * l.light.diffuse.g * lambert;
+                        rLitColor.b += rColor.b * l.light.diffuse.b * lambert;
+                    }
+                    break;
+                case I3DLightType.Point:
+                    const pos = I3DXMatrixMultiply(this._transforms[I3DTS_VIEW], l.light.position!);
+                    let pLdir = I3DXMatrixSubtract(pCam, pos) as I3DXVec;
 
-            pLitColor.r += pColor.r * l.light.diffuse!.r * pLambert * 1.0 / pAtten;
-            pLitColor.g += pColor.g * l.light.diffuse!.g * pLambert * 1.0 / pAtten;
-            pLitColor.b += pColor.b * l.light.diffuse!.b * pLambert * 1.0 / pAtten;
+                    const pLdist = I3DXVectorLength(pLdir);
+                    pLdir = I3DXMatrixScale(pLdir, 1/pLdist) as I3DXVec;
+                    const pLambert = Math.max(I3DXVectorDot(I3DXVector3(pLdir.data[0], pLdir.data[1], pLdir.data[2]), nCam), 0);
+                    const pAtten = l.light.atten0 + l.light.atten1 * pLdist + l.light.atten2 * pLdist * pLdist;
 
-            let qLdir = I3DXMatrixSubtract(qCam, l.pos) as I3DXVec;
-            const qLdist = I3DXVectorLength(qLdir);
-            qLdir = I3DXMatrixScale(qLdir, 1/qLdist) as I3DXVec;
-            const qLambert = Math.max(I3DXVectorDot(I3DXVector3(qLdir.data[0], qLdir.data[1], qLdir.data[2]), nCam), 0);
-            const qAtten = l.light.atten0 + l.light.atten1 * qLdist + l.light.atten2 * qLdist * qLdist;
+                    let qLdir = I3DXMatrixSubtract(qCam, pos) as I3DXVec;
+                    const qLdist = I3DXVectorLength(qLdir);
+                    qLdir = I3DXMatrixScale(qLdir, 1/qLdist) as I3DXVec;
+                    const qLambert = Math.max(I3DXVectorDot(I3DXVector3(qLdir.data[0], qLdir.data[1], qLdir.data[2]), nCam), 0);
+                    const qAtten = l.light.atten0 + l.light.atten1 * qLdist + l.light.atten2 * qLdist * qLdist;
 
-            qLitColor.r += qColor.r * l.light.diffuse!.r * qLambert * 1.0 / qAtten;
-            qLitColor.g += qColor.g * l.light.diffuse!.g * qLambert * 1.0 / qAtten;
-            qLitColor.b += qColor.b * l.light.diffuse!.b * qLambert * 1.0 / qAtten;
+                    let rLdir = I3DXMatrixSubtract(rCam, pos) as I3DXVec;
+                    const rLdist = I3DXVectorLength(rLdir);
+                    rLdir = I3DXMatrixScale(rLdir, 1/rLdist) as I3DXVec;
+                    const rLambert = Math.max(I3DXVectorDot(I3DXVector3(rLdir.data[0], rLdir.data[1], rLdir.data[2]), nCam), 0);
+                    const rAtten = l.light.atten0 + l.light.atten1 * rLdist + l.light.atten2 * rLdist * rLdist;
 
-            let rLdir = I3DXMatrixSubtract(rCam, l.pos) as I3DXVec;
-            const rLdist = I3DXVectorLength(rLdir);
-            rLdir = I3DXMatrixScale(rLdir, 1/rLdist) as I3DXVec;
-            const rLambert = Math.max(I3DXVectorDot(I3DXVector3(rLdir.data[0], rLdir.data[1], rLdir.data[2]), nCam), 0);
-            const rAtten = l.light.atten0 + l.light.atten1 * rLdist + l.light.atten2 * rLdist * rLdist;
+                    if (l.light.diffuse) {
+                        pLitColor.r += pColor.r * l.light.diffuse.r * pLambert * 1.0 / pAtten;
+                        pLitColor.g += pColor.g * l.light.diffuse.g * pLambert * 1.0 / pAtten;
+                        pLitColor.b += pColor.b * l.light.diffuse.b * pLambert * 1.0 / pAtten;
 
-            rLitColor.r += rColor.r * l.light.diffuse!.r * rLambert * 1.0 / rAtten;
-            rLitColor.g += rColor.g * l.light.diffuse!.g * rLambert * 1.0 / rAtten;
-            rLitColor.b += rColor.b * l.light.diffuse!.b * rLambert * 1.0 / rAtten;
+                        qLitColor.r += qColor.r * l.light.diffuse.r * qLambert * 1.0 / qAtten;
+                        qLitColor.g += qColor.g * l.light.diffuse.g * qLambert * 1.0 / qAtten;
+                        qLitColor.b += qColor.b * l.light.diffuse.b * qLambert * 1.0 / qAtten;
 
+                        rLitColor.r += rColor.r * l.light.diffuse.r * rLambert * 1.0 / rAtten;
+                        rLitColor.g += rColor.g * l.light.diffuse.g * rLambert * 1.0 / rAtten;
+                        rLitColor.b += rColor.b * l.light.diffuse.b * rLambert * 1.0 / rAtten;
+                    }
+                    break;
+                case I3DLightType.Spot:
+                    break;
+            }
         }
 
         pLitColor.r = Math.min(pLitColor.r, 1.0);
